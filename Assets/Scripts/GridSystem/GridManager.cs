@@ -4,23 +4,23 @@ using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
-    Node[,] grid;
+    Node[,,] grid;
     [Header("Grid parameters")]
-    [SerializeField, Range(4, 50)] int gridZSize = 15;
     [SerializeField, Range(4, 50)] int gridXSize = 15;
+    [SerializeField, Range(1, 30)] int gridYSize = 1;
+    [SerializeField, Range(4, 50)] int gridZSize = 15;
     [SerializeField, Min(0.1f)] float cellSize = 1.0f;
+    [SerializeField, Min(1)] int nbLayerPerCellSize = 4;
     [SerializeField] GameObject TileModel;
-
-
 
     private void Awake()
     {
         GenerateMap();
     }
 
-    public Node GetNodeAtIndex(int X, int Y)
+    public Node GetNodeAtIndex(int X, int Y, int Z)
     {
-        return grid[X, Y];
+        return grid[X, Y, Z];
     }
 
     [ContextMenu("Generate Map")]
@@ -43,34 +43,41 @@ public class GridManager : MonoBehaviour
         //for each node
         for (int z = 0; z < gridZSize; ++z)
         {
-            for (int x = 0; x < gridXSize; ++x)
+            for (int y = 0; y < gridYSize; ++y)
             {
-                //Find all adjacent elements inside the grid
+                for (int x = 0; x < gridXSize; ++x)
                 {
-                    if (!IsIndexOutOfBound(x, z - 1)) neighborNodes.Add(grid[x, z - 1]);
-                    if (!IsIndexOutOfBound(x, z + 1)) neighborNodes.Add(grid[x, z + 1]);
-                    if (!IsIndexOutOfBound(x - 1 , z)) neighborNodes.Add(grid[x - 1, z]);
-                    if (!IsIndexOutOfBound(x + 1, z)) neighborNodes.Add(grid[x + 1, z]);
-                }
-
-                ray.origin = grid[x, z].transform.position;
-                //for each adjacent element in the grid
-                foreach (Node node in neighborNodes)
-                {
-                    ray.direction = node.transform.position - ray.origin;
-                    if (Physics.Raycast(ray, out hit, cellSize, mask))
+                    //Find all adjacent elements inside the grid
                     {
+                        if (!IsIndexOutOfBound(x - 1, y, z)) neighborNodes.Add(grid[x - 1, y, z]);
+                        if (!IsIndexOutOfBound(x + 1, y, z)) neighborNodes.Add(grid[x + 1, y, z]);
 
+                        if (!IsIndexOutOfBound(x, y - 1, z)) neighborNodes.Add(grid[x, y - 1, z]);
+                        if (!IsIndexOutOfBound(x, y + 1, z)) neighborNodes.Add(grid[x, y + 1, z]);
+
+                        if (!IsIndexOutOfBound(x, y, z - 1)) neighborNodes.Add(grid[x, y, z - 1]);
+                        if (!IsIndexOutOfBound(x, y, z + 1)) neighborNodes.Add(grid[x, y, z + 1]);
                     }
-                }                
+
+                    ray.origin = grid[x, y, z].transform.position;
+                    //for each adjacent element in the grid
+                    foreach (Node node in neighborNodes)
+                    {
+                        ray.direction = node.transform.position - ray.origin;
+                        if (Physics.Raycast(ray, out hit, cellSize, mask))
+                        {
+
+                        }
+                    }
+                }
             }
         }
     }
 
-    bool IsIndexOutOfBound(int X, int Z)
+    bool IsIndexOutOfBound(int X, int Y, int Z)
     {
-        return X >= gridXSize || Z >= gridZSize ||
-                X < 0 || Z < 0;
+        return X >= gridXSize || Y >= gridYSize || Z >= gridZSize ||
+                X < 0 || Y < 0 || Z < 0;
     }
 
 
@@ -83,17 +90,22 @@ public class GridManager : MonoBehaviour
             return;
         }
 
-        grid = new Node[gridZSize, gridXSize];
+        grid = new Node[gridXSize, gridYSize, gridXSize];
         for (int z = 0; z < gridZSize; ++z)
         {
-            for (int x = 0; x < gridXSize; ++x)
+            for (int y = 0; y < gridYSize; ++y)
             {
-                //Adding 0.5f cause origin of tile are centered, not in a corner
-                var Go = Instantiate(TileModel, 
-                            new Vector3(transform.position.x + (x + 0.5f) * cellSize, 0f, transform.position.z + (z + 0.5f) * cellSize),
-                            Quaternion.identity, transform);
-                Go.transform.localScale = Vector3.one * cellSize;
-                grid[x,z] = Go.GetComponent<Node>();
+                for (int x = 0; x < gridXSize; ++x)
+                {
+                    //Adding 0.5f cause origin of tile are centered, not in a corner
+                    var Go = Instantiate(TileModel,
+                                new Vector3(transform.position.x + (x + 0.5f) * cellSize,
+                                            transform.position.y + transform.position.y + ((float)y / nbLayerPerCellSize) * cellSize, 
+                                            transform.position.z + (z + 0.5f) * cellSize),
+                                Quaternion.identity, transform);
+                    Go.transform.localScale = new Vector3(cellSize, cellSize/nbLayerPerCellSize, cellSize);
+                    grid[x, y, z] = Go.GetComponent<Node>();
+                }
             }
         }
     }
@@ -120,6 +132,8 @@ public class GridManager : MonoBehaviour
     [ContextMenuItem("Check position", "CheckIndex")]
     [SerializeField, Min(0)] int XindexToCheck;
     [ContextMenuItem("Check position", "CheckIndex")]
+    [SerializeField, Min(0)] int YindexToCheck;
+    [ContextMenuItem("Check position", "CheckIndex")]
     [SerializeField, Min(0)] int ZindexToCheck;
     
     void CheckIndex()
@@ -129,7 +143,7 @@ public class GridManager : MonoBehaviour
             Debug.LogError($"Error on {gameObject.name} : Grid need to be populated before trying to access her data.");
             return;
         }
-        Renderer R = GetNodeAtIndex(XindexToCheck, ZindexToCheck).GetComponentInChildren<Renderer>();
+        Renderer R = GetNodeAtIndex(XindexToCheck, YindexToCheck, ZindexToCheck).GetComponentInChildren<Renderer>();
         R.material.color = Color.green;
     }
 
@@ -137,13 +151,18 @@ public class GridManager : MonoBehaviour
     {
         for (int z = 0; z < gridZSize; ++z)
         {
-            for (int x = 0; x < gridXSize; ++x)
+            for (int y = 0; y < gridYSize; ++y)
             {
-                Vector3 Pos = new Vector3(transform.position.x + (x+0.5f) * cellSize, 0f, transform.position.z + (z + 0.5f) * cellSize);
-                Gizmos.DrawWireCube(Pos, new Vector3(0.66f* cellSize, cellSize/2, 0.66f * cellSize));
+                for (int x = 0; x < gridXSize; ++x)
+                {
+                    Vector3 Pos = new Vector3(transform.position.x + (x+0.5f) * cellSize,
+                                                transform.position.y + ((float)y / nbLayerPerCellSize) * cellSize,
+                                                transform.position.z + (z + 0.5f) * cellSize);
+                    Gizmos.DrawWireCube(Pos, new Vector3(0.66f * cellSize, cellSize / nbLayerPerCellSize, 0.66f * cellSize));
 
-                UnityEditor.Handles.color = Color.blue;
-                UnityEditor.Handles.Label(Pos, $"x:{x}, z:{z}");
+                    UnityEditor.Handles.color = Color.blue;
+                    UnityEditor.Handles.Label(Pos, $"x:{x}, y:{y}, z:{z}");
+                }
             }
         }        
     }
