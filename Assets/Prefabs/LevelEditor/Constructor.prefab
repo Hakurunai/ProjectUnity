@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &492078037174523104
+--- !u!1 &7500533740793421427
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,49 +8,45 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3962513967260590686}
-  - component: {fileID: 6581673598398364378}
+  - component: {fileID: 2106623335263129600}
+  - component: {fileID: 4923304794941650975}
   m_Layer: 2
-  m_Name: GridManager
+  m_Name: Constructor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3962513967260590686
+--- !u!4 &2106623335263129600
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 492078037174523104}
+  m_GameObject: {fileID: 7500533740793421427}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6581673598398364378
+--- !u!114 &4923304794941650975
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 492078037174523104}
+  m_GameObject: {fileID: 7500533740793421427}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 189ef23dc9e35634db658d53a5239969, type: 3}
+  m_Script: {fileID: 11500000, guid: 60d6b77f84feb6648a0f44c1a6bcc67c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gridXSize: 15
-  gridYSize: 4
-  gridZSize: 15
-  cellSize: 1
-  nbLayerPerCellSize: 4
-  TileModel: {fileID: 709916084986144403, guid: ff77f3422a19a914a86776ba985d2d45,
+  tileSize: 1
+  yTileOffset: 0.25
+  yCurrentLevel: 0
+  gridRenderer: {fileID: 3683730692035442845, guid: 4b461e4c35dea3f449b56c25483ac04c,
     type: 3}
-  XindexToCheck: 3
-  YindexToCheck: 1
-  ZindexToCheck: 1
+  currentConstruction: {fileID: 0}

@@ -149,6 +149,7 @@ public class GridManager : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        return;
         for (int z = 0; z < gridZSize; ++z)
         {
             for (int y = 0; y < gridYSize; ++y)
