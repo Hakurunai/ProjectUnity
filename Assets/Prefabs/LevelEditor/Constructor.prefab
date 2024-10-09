@@ -47,7 +47,7 @@ MonoBehaviour:
   tileSize: 1
   yTileOffset: 0.25
   yCurrentLevel: 0
-  gridRenderer: {fileID: 3683730692035442845, guid: 4b461e4c35dea3f449b56c25483ac04c,
+  gridRenderer: {fileID: 7528665053515106183, guid: 4b461e4c35dea3f449b56c25483ac04c,
     type: 3}
   currentConstruction: {fileID: 0}
   PreviewMat: {fileID: 2100000, guid: cca19298c7caa924f9ca1acf6174e1b7, type: 2}

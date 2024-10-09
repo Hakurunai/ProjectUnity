@@ -1,12 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
+using static UnityEditor.PlayerSettings;
 
 public class Constructor : MonoBehaviour
 {
     [Header("Tile Info -> need to be moved")]
-    [SerializeField, Range(1,4)] int tileSize = 1;
+    [SerializeField, Range(0.2f,4f)] float tileSize = 1f;
     [SerializeField, Range(0.1f,1.0f)] float yTileOffset = 0.25f;
     [SerializeField, Range(0,30)] int yCurrentLevel = 0;
 
@@ -76,4 +78,12 @@ public class Constructor : MonoBehaviour
             renderer.materials = allMats;
         }
     }
+
+#if UNITY_EDITOR
+    private void OnDrawGizmos()
+    {
+        UnityEditor.Handles.color = Color.blue;
+        UnityEditor.Handles.Label(worldPos, $"x:{worldPos.x}, y:{worldPos.y}, z:{worldPos.z}");
+    }
+#endif
 }
