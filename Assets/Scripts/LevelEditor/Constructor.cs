@@ -1,28 +1,52 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Constructor : MonoBehaviour
 {
+    [Header("Tile Info -> need to be moved")]
     [SerializeField, Range(1,4)] int tileSize = 1;
     [SerializeField, Range(0.1f,1.0f)] float yTileOffset = 0.25f;
     [SerializeField, Range(0,30)] int yCurrentLevel = 0;
 
+    [Header("Renderer and preview datas")]
     [SerializeField] GameObject gridRenderer;
     [SerializeField] GameObject currentConstruction;
+    GameObject constructionViewer;
 
+    [SerializeField] Material PreviewMat;
+
+    //Find ground location data
     Plane gridBlocker = new Plane(Vector3.down, 0f);
-
     Camera cam;
+    Vector3 screenPos;
+    Vector3 worldPos;
     private void Awake()
     {
         cam = Camera.main;
         gridRenderer = Instantiate(gridRenderer);
     }
 
-    Vector3 screenPos;
-    Vector3 worldPos;
+    private void Start()
+    {
+        SetConstructionViewer();
+    }
+
     void Update()
+    {
+        PositionGridRenderer();
+        constructionViewer.transform.position = worldPos;
+
+        if (Input.GetMouseButtonDown(0) && currentConstruction != null)
+        {
+            //TODO : Check underneath before instantiation
+
+            var obj = Instantiate(currentConstruction, worldPos, Quaternion.identity);
+        }
+    }
+
+    void PositionGridRenderer()
     {
         screenPos = Input.mousePosition;
         Ray ray = cam.ScreenPointToRay(screenPos);
@@ -36,5 +60,20 @@ public class Constructor : MonoBehaviour
         worldPos.z = Mathf.Round(worldPos.z / tileSize) * tileSize;
         worldPos.y = yCurrentLevel * yTileOffset;
         gridRenderer.transform.position = worldPos;
+    }
+
+    //Get a visible preview with a different shader
+    void SetConstructionViewer()
+    {        
+        constructionViewer = Instantiate(currentConstruction, Vector3.zero, Quaternion.identity);
+        if (PreviewMat != null)
+        {
+            //we need to allocate a new array, cause modification of the current one are not taking into account
+            Renderer renderer = constructionViewer.GetComponent<Renderer>();
+            Material[] allMats = new Material[renderer.materials.Length];
+            for (int i = 0; i < allMats.Length; ++i)
+                allMats[i] = PreviewMat;
+            renderer.materials = allMats;
+        }
     }
 }

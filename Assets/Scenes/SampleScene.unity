@@ -439,6 +439,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: GridManager
       objectReference: {fileID: 0}
+    - target: {fileID: 492078037174523104, guid: 830e5afaefabe9649891a5e2565c91a4,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3962513967260590686, guid: 830e5afaefabe9649891a5e2565c91a4,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -562,6 +567,12 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4923304794941650975, guid: 6e3e5ecb094b7d94d8d9c80a6af983b4,
+        type: 3}
+      propertyPath: currentConstruction
+      value: 
+      objectReference: {fileID: 2556589683527378889, guid: 187f3d3d1a1062047b504b215fec490d,
+        type: 3}
     - target: {fileID: 7500533740793421427, guid: 6e3e5ecb094b7d94d8d9c80a6af983b4,
         type: 3}
       propertyPath: m_Name
