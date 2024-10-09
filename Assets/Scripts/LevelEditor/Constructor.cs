@@ -71,7 +71,7 @@ public class Constructor : MonoBehaviour
         if (PreviewMat != null)
         {
             //we need to allocate a new array, cause modification of the current one are not taking into account
-            Renderer renderer = constructionViewer.GetComponent<Renderer>();
+            Renderer renderer = constructionViewer.GetComponentInChildren<Renderer>();
             Material[] allMats = new Material[renderer.materials.Length];
             for (int i = 0; i < allMats.Length; ++i)
                 allMats[i] = PreviewMat;
