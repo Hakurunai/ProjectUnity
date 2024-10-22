@@ -1,0 +1,14 @@
+when the player places a building
+    perform a raycast from camera into the world
+    if there is a hit
+        if the hit is on the terrain
+            allow free placement of the object
+            if the placed object is a foundation object
+                create a local grid aligned to the rotation and position of the object
+                make the newly placed object the first member of that grid
+        if the hit is on a non-foundation object
+            deny placement
+        if the hit is on a foundation-object
+            get the grid the object is a member of
+            snap position and orientation to the grid
+            make the object a member of the same grid

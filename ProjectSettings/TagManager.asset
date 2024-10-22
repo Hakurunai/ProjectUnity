@@ -8,13 +8,13 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - Tile
+  - Foundation
   - Water
   - UI
   - Obstacle
-  - 
-  - 
-  - 
+  - Terrain
+  - ConstructionViewer
+  - Camera
   - 
   - 
   - 

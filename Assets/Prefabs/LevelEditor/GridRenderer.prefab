@@ -96,3 +96,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 461e24bc78d59fd4eaf48bf34bbbdf17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _texTiling: 0
+  _texOffset: 0
+  _fadingStartTreshold: 0
+  _fadingEndTreshold: 0

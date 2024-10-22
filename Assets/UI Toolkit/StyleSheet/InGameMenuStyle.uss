@@ -1,0 +1,21 @@
+.button:hover {
+    scale: 1.1 1.1;
+    color: rgb(202, 194, 180);
+}
+
+.button {
+    width: 200px;
+    height: 30px;
+    font-size: 18px;
+    -unity-text-align: middle-center;
+    justify-content: center;
+    align-self: auto;
+    -unity-font: url("project://database/Assets/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=2230732570650464555&guid=e79909707d222904cb7f510deab2fbc3&type=3#NotInter-Regular");
+    -unity-font-style: bold;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    border-bottom-right-radius: 15px;
+    border-bottom-left-radius: 15px;
+    transform-origin: center;
+    position: relative;
+}
