@@ -5,17 +5,17 @@ using UnityEngine;
 [RequireComponent(typeof(Renderer))]
 public class GridRenderer : MonoBehaviour
 {
-    Material mat;
+    Material _mat;
 
     private void Start()
     {
-        mat = GetComponent<Renderer>().material;
+        _mat = GetComponent<Renderer>().material;
     }
 
     private void Update()
     {
         //Update position of the object to the shader
-        mat.SetVector("_ObjPosition", transform.position);
+        _mat.SetVector("_ObjPosition", transform.position);
     }
 
     void UpdateSize()

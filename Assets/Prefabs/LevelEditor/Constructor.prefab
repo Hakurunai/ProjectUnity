@@ -44,10 +44,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60d6b77f84feb6648a0f44c1a6bcc67c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tileSize: 0.25
-  yTileOffset: 0.25
-  yCurrentLevel: 0
-  gridRenderer: {fileID: 1656821130942307585, guid: 972e2224f713a9043ab3e9357d298fa0,
+  _tileSize: 1
+  _yTileOffset: 0.25
+  _yCurrentLevel: 0
+  _gridRenderer: {fileID: 1656821130942307585, guid: 972e2224f713a9043ab3e9357d298fa0,
     type: 3}
-  currentConstruction: {fileID: 0}
-  PreviewMat: {fileID: 2100000, guid: cca19298c7caa924f9ca1acf6174e1b7, type: 2}
+  _currentConstruction: {fileID: 0}
+  _previewMat: {fileID: 2100000, guid: cca19298c7caa924f9ca1acf6174e1b7, type: 2}

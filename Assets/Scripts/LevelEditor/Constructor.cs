@@ -7,26 +7,26 @@ using static UnityEditor.PlayerSettings;
 public class Constructor : MonoBehaviour
 {
     [Header("Tile Info -> need to be moved")]
-    [SerializeField, Range(0.2f,4f)] float tileSize = 1f;
-    [SerializeField, Range(0.1f,1.0f)] float yTileOffset = 0.25f;
-    [SerializeField, Range(0,30)] int yCurrentLevel = 0;
+    [SerializeField, Range(0.2f,4f)] float _tileSize = 1f;
+    [SerializeField, Range(0.1f,1.0f)] float _yTileOffset = 0.25f;
+    [SerializeField, Range(0,30)] int _yCurrentLevel = 0;
 
     [Header("Renderer and preview datas")]
-    [SerializeField] GameObject gridRenderer;
-    [SerializeField] GameObject currentConstruction;
-    GameObject constructionViewer;
+    [SerializeField] GameObject _gridRenderer;
+    [SerializeField] GameObject _currentConstruction;
+    GameObject _constructionViewer;
 
-    [SerializeField] Material PreviewMat;
+    [SerializeField] Material _previewMat;
 
     //Find ground location data
-    Plane gridBlocker = new Plane(Vector3.down, 0f);
-    Camera cam;
-    Vector3 screenPos;
-    Vector3 worldPos;
+    Plane _gridBlocker = new Plane(Vector3.down, 0f);
+    Camera _cam;
+    Vector3 _screenPos;
+    Vector3 _worldPos;
     private void Awake()
     {
-        cam = Camera.main;
-        gridRenderer = Instantiate(gridRenderer);
+        _cam = Camera.main;
+        _gridRenderer = Instantiate(_gridRenderer);
     }
 
     private void Start()
@@ -37,43 +37,43 @@ public class Constructor : MonoBehaviour
     void Update()
     {
         PositionGridRenderer();
-        constructionViewer.transform.position = worldPos;
+        _constructionViewer.transform.position = _worldPos;
 
-        if (Input.GetMouseButtonDown(0) && currentConstruction != null)
+        if (Input.GetMouseButtonDown(0) && _currentConstruction != null)
         {
             //TODO : Check underneath before instantiation
 
-            var obj = Instantiate(currentConstruction, worldPos, Quaternion.identity);
+            var obj = Instantiate(_currentConstruction, _worldPos, Quaternion.identity);
         }
     }
 
     void PositionGridRenderer()
     {
-        screenPos = Input.mousePosition;
-        Ray ray = cam.ScreenPointToRay(screenPos);
+        _screenPos = Input.mousePosition;
+        Ray ray = _cam.ScreenPointToRay(_screenPos);
 
-        if (gridBlocker.Raycast(ray, out float distance))
+        if (_gridBlocker.Raycast(ray, out float distance))
         {
-            worldPos = ray.GetPoint(distance);
+            _worldPos = ray.GetPoint(distance);
         }
 
-        worldPos.x = Mathf.Round(worldPos.x / tileSize) * tileSize;
-        worldPos.z = Mathf.Round(worldPos.z / tileSize) * tileSize;
-        worldPos.y = yCurrentLevel * yTileOffset;
-        gridRenderer.transform.position = worldPos;
+        _worldPos.x = Mathf.Round(_worldPos.x / _tileSize) * _tileSize;
+        _worldPos.z = Mathf.Round(_worldPos.z / _tileSize) * _tileSize;
+        _worldPos.y = _yCurrentLevel * _yTileOffset;
+        _gridRenderer.transform.position = _worldPos;
     }
 
     //Get a visible preview with a different shader
     void SetConstructionViewer()
     {        
-        constructionViewer = Instantiate(currentConstruction, Vector3.zero, Quaternion.identity);
-        if (PreviewMat != null)
+        _constructionViewer = Instantiate(_currentConstruction, Vector3.zero, Quaternion.identity);
+        if (_previewMat != null)
         {
             //we need to allocate a new array, cause modification of the current one are not taking into account
-            Renderer renderer = constructionViewer.GetComponentInChildren<Renderer>();
+            Renderer renderer = _constructionViewer.GetComponentInChildren<Renderer>();
             Material[] allMats = new Material[renderer.materials.Length];
             for (int i = 0; i < allMats.Length; ++i)
-                allMats[i] = PreviewMat;
+                allMats[i] = _previewMat;
             renderer.materials = allMats;
         }
     }
@@ -82,7 +82,7 @@ public class Constructor : MonoBehaviour
     private void OnDrawGizmos()
     {
         UnityEditor.Handles.color = Color.blue;
-        UnityEditor.Handles.Label(worldPos, $"x:{worldPos.x}, y:{worldPos.y}, z:{worldPos.z}");
+        UnityEditor.Handles.Label(_worldPos, $"x:{_worldPos.x}, y:{_worldPos.y}, z:{_worldPos.z}");
     }
 #endif
 }
