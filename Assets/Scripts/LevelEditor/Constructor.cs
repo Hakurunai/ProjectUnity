@@ -47,7 +47,7 @@ public class Constructor : MonoBehaviour
 
         //Inputs
         _inputActionAsset = new PlayerInputActions();
-        _buildAction = _inputActionAsset.Player.Build;
+        _buildAction = _inputActionAsset.Gameplay.Build;
     }
 
     private void Start()
