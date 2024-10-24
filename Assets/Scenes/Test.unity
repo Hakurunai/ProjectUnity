@@ -164,14 +164,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 398a9bc979ef547408af0a18a5ef2974, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Event: {fileID: 11400000, guid: e3975f91f359a0140a99ca1e33a1cfe9, type: 2}
+  Event: {fileID: 11400000, guid: 3e6ab51dc76cc344f95efb2df9c0c3d9, type: 2}
+  Delegate:
+    _target: {fileID: 72577768}
+    _component: {fileID: 72577769}
+    _methodName: PrintMessage
   Response:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 72577769}
         m_TargetAssemblyTypeName: Print, Assembly-CSharp
         m_MethodName: PrintMessage
-        m_Mode: 5
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -245,7 +249,7 @@ MonoBehaviour:
   ValueUpdated:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 11400000, guid: e3975f91f359a0140a99ca1e33a1cfe9, type: 2}
+      - m_Target: {fileID: 11400000, guid: 3e6ab51dc76cc344f95efb2df9c0c3d9, type: 2}
         m_TargetAssemblyTypeName: GameEvent, Assembly-CSharp
         m_MethodName: Raise
         m_Mode: 1
@@ -257,6 +261,11 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  SerializableDelegate:
+    _target: {fileID: 11400000, guid: 3e6ab51dc76cc344f95efb2df9c0c3d9, type: 2}
+    _component: {fileID: 0}
+    _methodName: Raise
+  PerfMeasureNbIteration: 10000
 --- !u!1 &836404003
 GameObject:
   m_ObjectHideFlags: 0

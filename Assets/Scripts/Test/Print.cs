@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class Print : MonoBehaviour
 {
-    public void PrintMessage(string p_Message)
+    public void PrintMessage()
     {
-        Debug.Log(p_Message);
+        Debug.Log("Yay");
     }
 }

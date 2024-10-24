@@ -4,11 +4,19 @@ using UnityEngine.Events;
 public class GameEventListener : MonoBehaviour
 {
     public GameEvent Event;
+    public SerializableDelegateNoParam Delegate;
     public UnityEvent Response;
+
+
+    private void Awake()
+    {
+        Delegate.InitDelegate();
+    }
 
     private void OnEnable()
     {
         Event.RegisterListener(this);
+
     }
 
     private void OnDisable()
@@ -18,6 +26,7 @@ public class GameEventListener : MonoBehaviour
 
     public void OnEventRaised()
     {
+        Delegate?.Invoke();
         Response.Invoke();
     }
 }
