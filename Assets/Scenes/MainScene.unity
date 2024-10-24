@@ -678,10 +678,43 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4923304794941650975, guid: 6e3e5ecb094b7d94d8d9c80a6af983b4,
         type: 3}
+      propertyPath: Test.Reader
+      value: 
+      objectReference: {fileID: 11400000, guid: 759a4624fe0ace54284df2a12446d603,
+        type: 2}
+    - target: {fileID: 4923304794941650975, guid: 6e3e5ecb094b7d94d8d9c80a6af983b4,
+        type: 3}
+      propertyPath: Test._value
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4923304794941650975, guid: 6e3e5ecb094b7d94d8d9c80a6af983b4,
+        type: 3}
+      propertyPath: Test.Variable
+      value: 
+      objectReference: {fileID: 11400000, guid: 6207424a621f09949a8811e6dc91cddf,
+        type: 2}
+    - target: {fileID: 4923304794941650975, guid: 6e3e5ecb094b7d94d8d9c80a6af983b4,
+        type: 3}
+      propertyPath: Test.bUseConstant
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4923304794941650975, guid: 6e3e5ecb094b7d94d8d9c80a6af983b4,
+        type: 3}
+      propertyPath: TestStartingValue
+      value: 
+      objectReference: {fileID: 11400000, guid: 0c8618c1a71ea4449a366ecebfcb664e,
+        type: 2}
+    - target: {fileID: 4923304794941650975, guid: 6e3e5ecb094b7d94d8d9c80a6af983b4,
+        type: 3}
       propertyPath: _inputActionAsset
       value: 
       objectReference: {fileID: -944628639613478452, guid: 7d4e24fa3cb776f4daad14fe59198caf,
         type: 3}
+    - target: {fileID: 4923304794941650975, guid: 6e3e5ecb094b7d94d8d9c80a6af983b4,
+        type: 3}
+      propertyPath: Test.ConstantValue
+      value: 3.82
+      objectReference: {fileID: 0}
     - target: {fileID: 4923304794941650975, guid: 6e3e5ecb094b7d94d8d9c80a6af983b4,
         type: 3}
       propertyPath: _layerMasks.m_Bits
