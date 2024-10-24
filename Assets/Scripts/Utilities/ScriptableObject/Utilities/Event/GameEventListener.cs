@@ -26,7 +26,7 @@ public class GameEventListener : MonoBehaviour
 
     public void OnEventRaised()
     {
-        Delegate?.Invoke();
-        Response.Invoke();
+        //Delegate?.Invoke();
+        //Response.Invoke();
     }
 }

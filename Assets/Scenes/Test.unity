@@ -265,7 +265,7 @@ MonoBehaviour:
     _target: {fileID: 11400000, guid: 3e6ab51dc76cc344f95efb2df9c0c3d9, type: 2}
     _component: {fileID: 0}
     _methodName: Raise
-  PerfMeasureNbIteration: 10000
+  PerfMeasureNbIteration: 1000000
 --- !u!1 &836404003
 GameObject:
   m_ObjectHideFlags: 0

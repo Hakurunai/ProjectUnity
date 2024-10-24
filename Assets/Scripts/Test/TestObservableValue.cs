@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -18,43 +19,82 @@ public class TestObservableValue : MonoBehaviour
         Init();
     }
 
+    public event Action OnEvent;
+
+    public delegate void CSharpDelegate();
+    public CSharpDelegate MyCustomDelegate;
+
     void Init()
     {
-        valueToObserve.InitObservable();
-        ValueUpdated.Invoke();
-
-
-        SerializableDelegate.InitDelegate();
-        SerializableDelegate.Invoke();
-
-
-        //float startTime;
-        //float endTime;
         //valueToObserve.InitObservable();
-
-        //startTime = Time.realtimeSinceStartup;
-
-        //for (int i = 0; i < PerfMeasureNbIteration; ++i)
-        //{
-        //    ValueUpdated.Invoke();
-        //}
-
-        //endTime = Time.realtimeSinceStartup;
-        //Debug.Log("Unity_Event execution time: " + (endTime - startTime) + " seconds");
+        //ValueUpdated.Invoke();
 
 
         //SerializableDelegate.InitDelegate();
+        //SerializableDelegate.Invoke();
 
-        //startTime = Time.realtimeSinceStartup;
+        
 
-        //for (int i = 0; i < PerfMeasureNbIteration; ++i)
-        //{
-        //    SerializableDelegate.Invoke();
-        //}
+        double startTime;
+        double endTimeUnityEvent;
+        double endTimeSerializableDelegate;
+        double endTimeCSharpDelegate;
+        double endTimeCSharpEvent;
+        valueToObserve.InitObservable();
 
-        //endTime = Time.realtimeSinceStartup;
-        //Debug.Log("Serializable_Delegate execution time: " + (endTime - startTime) + " seconds");
+        startTime = Time.realtimeSinceStartup;
+
+        for (int i = 0; i < PerfMeasureNbIteration; ++i)
+        {
+            ValueUpdated.Invoke();
+        }
+
+        endTimeUnityEvent = Time.realtimeSinceStartup - startTime;
+        Debug.Log("Unity_Event execution time: " + endTimeUnityEvent + " seconds");
 
 
+        SerializableDelegate.InitDelegate();
+
+        startTime = Time.realtimeSinceStartup;
+
+        for (int i = 0; i < PerfMeasureNbIteration; ++i)
+        {
+            SerializableDelegate.Invoke();
+        }
+
+        endTimeSerializableDelegate = Time.realtimeSinceStartup - startTime;
+        Debug.Log("Serializable_Delegate execution time: " + endTimeSerializableDelegate + " seconds");
+
+
+        startTime = Time.realtimeSinceStartup;
+
+        for (int i = 0; i < PerfMeasureNbIteration; ++i)
+        {
+            MyCustomDelegate?.Invoke();
+        }
+
+        endTimeCSharpDelegate = Time.realtimeSinceStartup - startTime;
+        Debug.Log("CSharp_Delegate execution time: " + endTimeCSharpDelegate + " seconds");
+
+
+
+        startTime = Time.realtimeSinceStartup;
+
+        for (int i = 0; i < PerfMeasureNbIteration; ++i)
+        {
+            OnEvent?.Invoke();
+        }
+
+        endTimeCSharpEvent = Time.realtimeSinceStartup - startTime;
+        Debug.Log("CSharp_Event execution time: " + endTimeCSharpEvent + " seconds");
+
+
+        double resVsUnityEvent = endTimeUnityEvent / endTimeSerializableDelegate;
+        double resVsCSharpEvent = endTimeSerializableDelegate / endTimeCSharpEvent;
+        double resVsCSharpDelegate = endTimeSerializableDelegate / endTimeCSharpDelegate;
+
+        Debug.Log($"Serializable_Delegate take {resVsUnityEvent} less time to execute than Unity_Event.");
+        Debug.Log($"Serializable_Delegate take {resVsCSharpEvent} more time to execute than CSharp_Event.");
+        Debug.Log($"Serializable_Delegate take {resVsCSharpDelegate} more time to execute than CSharp_Event.");
     }
 }
