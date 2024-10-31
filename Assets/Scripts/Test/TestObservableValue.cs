@@ -92,9 +92,11 @@ public class TestObservableValue : MonoBehaviour
         double resVsUnityEvent = endTimeUnityEvent / endTimeSerializableDelegate;
         double resVsCSharpEvent = endTimeSerializableDelegate / endTimeCSharpEvent;
         double resVsCSharpDelegate = endTimeSerializableDelegate / endTimeCSharpDelegate;
+        double resCSharpDelegateVsUnityEvent = endTimeUnityEvent / endTimeCSharpDelegate;
 
-        Debug.Log($"Serializable_Delegate take {resVsUnityEvent} less time to execute than Unity_Event.");
-        Debug.Log($"Serializable_Delegate take {resVsCSharpEvent} more time to execute than CSharp_Event.");
-        Debug.Log($"Serializable_Delegate take {resVsCSharpDelegate} more time to execute than CSharp_Event.");
+        Debug.Log($"Serializable_Delegate take {resVsUnityEvent} less time to execute than UNITY_Event.");
+        Debug.Log($"Serializable_Delegate take {resVsCSharpEvent} more time to execute than CSharp_EVENT.");
+        Debug.Log($"Serializable_Delegate take {resVsCSharpDelegate} more time to execute than CSharp_DELEGATE.");
+        Debug.Log($"Comparison : UNITY_Event take {resCSharpDelegateVsUnityEvent} more time to execute than CSharp_DELEGATE.");
     }
 }

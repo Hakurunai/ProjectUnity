@@ -131,8 +131,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 72577771}
-  - component: {fileID: 72577770}
   - component: {fileID: 72577769}
+  - component: {fileID: 72577772}
   m_Layer: 0
   m_Name: TestSOEvent
   m_TagString: Untagged
@@ -152,38 +152,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6531299666ee5a04ba2f906139d98c45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &72577770
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 72577768}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 398a9bc979ef547408af0a18a5ef2974, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Event: {fileID: 11400000, guid: 3e6ab51dc76cc344f95efb2df9c0c3d9, type: 2}
-  Delegate:
-    _target: {fileID: 72577768}
-    _component: {fileID: 72577769}
-    _methodName: PrintMessage
-  Response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 72577769}
-        m_TargetAssemblyTypeName: Print, Assembly-CSharp
-        m_MethodName: PrintMessage
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: Event Listened
-          m_BoolArgument: 0
-        m_CallState: 2
 --- !u!4 &72577771
 Transform:
   m_ObjectHideFlags: 0
@@ -199,6 +167,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &72577772
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 72577768}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 398a9bc979ef547408af0a18a5ef2974, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Event: {fileID: 11400000, guid: 3e6ab51dc76cc344f95efb2df9c0c3d9, type: 2}
+  Delegate:
+    _targetSelector: {fileID: 72577768}
+    _methodOwner: {fileID: 72577769}
+    _methodName: PrintMessage
 --- !u!1 &178832102
 GameObject:
   m_ObjectHideFlags: 0
@@ -262,8 +247,8 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   SerializableDelegate:
-    _target: {fileID: 11400000, guid: 3e6ab51dc76cc344f95efb2df9c0c3d9, type: 2}
-    _component: {fileID: 0}
+    _targetSelector: {fileID: 11400000, guid: 3e6ab51dc76cc344f95efb2df9c0c3d9, type: 2}
+    _methodOwner: {fileID: 11400000, guid: 3e6ab51dc76cc344f95efb2df9c0c3d9, type: 2}
     _methodName: Raise
   PerfMeasureNbIteration: 1000000
 --- !u!1 &836404003

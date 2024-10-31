@@ -15,8 +15,8 @@ public class SerializableDelegateDrawer : PropertyDrawer
         EditorGUI.indentLevel = 1;
 
         // Get the target object and method name fields
-        SerializedProperty targetProperty = property.FindPropertyRelative("_target");
-        SerializedProperty componentProperty = property.FindPropertyRelative("_component");
+        SerializedProperty targetSelectorProperty = property.FindPropertyRelative("_targetSelector");
+        SerializedProperty methodOwnerProperty = property.FindPropertyRelative("_methodOwner");
         SerializedProperty methodNameProperty = property.FindPropertyRelative("_methodName");
 
         Color LineBlack = new Color(0.102f, 0.102f, 0.102f);
@@ -47,10 +47,14 @@ public class SerializableDelegateDrawer : PropertyDrawer
         // Draw the target field
         yOffset += yLargeSeparator;
         Rect targetRect = new Rect(boxRect.x, yOffset, boxRect.width, EditorGUIUtility.singleLineHeight);
-        EditorGUI.PropertyField(targetRect, targetProperty);
+        EditorGUI.PropertyField(targetRect, targetSelectorProperty);
 
-        UnityEngine.Object targetObject = targetProperty.objectReferenceValue;
-        if (targetObject == null) goto EndPropertyDrawing;        
+        UnityEngine.Object targetObject = targetSelectorProperty.objectReferenceValue;
+        if (targetObject == null)
+        {
+            EndPropertyDrawing(indent);
+            return;
+        }
         // If target is a GameObject, show a component dropdown
         if (targetObject is GameObject)
         {
@@ -59,7 +63,7 @@ public class SerializableDelegateDrawer : PropertyDrawer
             string[] componentNames = components.Select(c => c.GetType().Name).ToArray();
 
             // Find the currently selected component index
-            Component selectedComponent = componentProperty.objectReferenceValue as Component;
+            Component selectedComponent = methodOwnerProperty.objectReferenceValue as Component;
             int selectedIndex = selectedComponent != null ? Array.IndexOf(components, selectedComponent) : 0;
 
             // Draw component dropdown
@@ -67,18 +71,15 @@ public class SerializableDelegateDrawer : PropertyDrawer
             Rect componentRect = new Rect(position.x, yOffset, position.width, EditorGUIUtility.singleLineHeight);
             selectedIndex = EditorGUI.Popup(componentRect, "Component", selectedIndex, componentNames);
 
-            // Update the component field with the selected component
             if (selectedIndex >= 0 && selectedIndex < components.Length)
             {
-                componentProperty.objectReferenceValue = components[selectedIndex];
-            }
-
-            yOffset += EditorGUIUtility.singleLineHeight + yLittleSeparator;
-            // If a component is selected, show method dropdown
-            if (selectedIndex >= 0 && selectedIndex < components.Length)
-            {
+                yOffset += EditorGUIUtility.singleLineHeight + yLittleSeparator;
+                // If a component is selected, show method dropdown
                 Component component = components[selectedIndex];
                 DrawMethodDropdown(position, yOffset, component.GetType(), methodNameProperty);
+
+                // Update the owner property field with the selected component
+                methodOwnerProperty.objectReferenceValue = components[selectedIndex];
             }
         }
         // If target is a ScriptableObject, show method dropdown directly
@@ -89,13 +90,9 @@ public class SerializableDelegateDrawer : PropertyDrawer
             ScriptableObject scriptableObject = (ScriptableObject)targetObject;
             DrawMethodDropdown(position, yOffset, scriptableObject.GetType(), methodNameProperty);
 
-            // Clear the component field since we're working with a ScriptableObject
-            componentProperty.objectReferenceValue = null;
+            methodOwnerProperty.objectReferenceValue = scriptableObject;
         }
-
-    EndPropertyDrawing:
-        EditorGUI.indentLevel = indent;
-        EditorGUI.EndProperty();
+        EndPropertyDrawing(indent);
     }
 
     private void DrawMethodDropdown(Rect position, float yOffset, Type type, SerializedProperty methodNameProperty)
@@ -125,8 +122,7 @@ public class SerializableDelegateDrawer : PropertyDrawer
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        // Two lines for target and method selection, plus one for component if it's a GameObject
-        SerializedProperty targetProperty = property.FindPropertyRelative("_target");
+        SerializedProperty targetProperty = property.FindPropertyRelative("_targetSelector");
         UnityEngine.Object targetObject = targetProperty.objectReferenceValue;
         
         if (targetObject is GameObject)
@@ -141,5 +137,10 @@ public class SerializableDelegateDrawer : PropertyDrawer
         {
             return EditorGUIUtility.singleLineHeight * 2 + 30; // Default height if no target
         }
+    }
+    private void EndPropertyDrawing(int p_indentLevel)
+    {
+        EditorGUI.indentLevel = p_indentLevel;
+        EditorGUI.EndProperty();
     }
 }

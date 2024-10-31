@@ -3,30 +3,36 @@ using UnityEngine.Events;
 
 public class GameEventListener : MonoBehaviour
 {
-    public GameEvent Event;
-    public SerializableDelegateNoParam Delegate;
-    public UnityEvent Response;
-
-
-    private void Awake()
+    [SerializeField] GameEvent Event;
+    [SerializeField] SerializableDelegateNoParam Delegate;
+    protected void Awake()
     {
         Delegate.InitDelegate();
     }
 
-    private void OnEnable()
+    protected void OnEnable()
     {
         Event.RegisterListener(this);
 
     }
 
-    private void OnDisable()
+    protected void OnDisable()
     {
         Event.UnregisterListener(this);
     }
 
-    public void OnEventRaised()
+    public virtual void OnEventRaised()
+    {
+        Delegate?.Invoke();
+    }
+}
+
+public class GameEventListener<T> : GameEventListener
+{
+    [SerializeField] SerializableDelegateOneParam<T> Delegate;
+
+    public override void OnEventRaised()
     {
         //Delegate?.Invoke();
-        //Response.Invoke();
     }
 }
