@@ -3,6 +3,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Assertions;
+using UnityEngine.InputSystem;
 using static UnityEngine.GraphicsBuffer;
 
 //[Serializable]
@@ -110,6 +112,50 @@ public abstract class SerializableDelegateBase
         }
         return true;
     }
+
+
+    public static MethodInfo GenerateMethodInfo(UnityEngine.Object p_MethodOwner, in string p_MethodName, SerializableDelegateBase p_Delegate)
+    {
+        BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+        Type[] argumentTypes = p_Delegate.GetType().IsGenericType ? 
+            p_Delegate.GetType().GetGenericArguments() : Type.EmptyTypes;
+
+        MethodInfo method = p_MethodOwner.GetType().GetMethod(p_MethodName, flags, null, argumentTypes, null);
+        Debug.Assert(method != null, $"Method '{p_MethodName}' not found on target '{p_MethodOwner}'.");
+
+        return method;
+    }
+
+    private static Type GenerateGenericDelegateType(SerializableDelegateBase p_Delegate)
+    {
+        Type[] genericTypes = p_Delegate.GetType().GetGenericArguments();
+        return typeof(Action<>).MakeGenericType(genericTypes);
+    }
+
+    public static Action<T1> GenerateDelegate<T1>(MethodInfo p_MethodInfo, UnityEngine.Object p_MethodOwner, SerializableDelegateBase p_Delegate)
+    {
+        Type delegateType = GenerateGenericDelegateType(p_Delegate);
+        return (Action<T1>)Delegate.CreateDelegate(delegateType, p_MethodOwner, p_MethodInfo);
+    }
+
+    public static Action<T1,T2> GenerateDelegate<T1, T2>(MethodInfo p_MethodInfo, UnityEngine.Object p_MethodOwner, SerializableDelegateBase p_Delegate)
+    {
+        Type delegateType = GenerateGenericDelegateType(p_Delegate);
+        return (Action<T1,T2>)Delegate.CreateDelegate(delegateType, p_MethodOwner, p_MethodInfo);
+    }
+
+    public static Action<T1, T2, T3> GenerateDelegate<T1, T2, T3>(MethodInfo p_MethodInfo, UnityEngine.Object p_MethodOwner, SerializableDelegateBase p_Delegate)
+    {
+        Type delegateType = GenerateGenericDelegateType(p_Delegate);
+        return (Action<T1, T2, T3>)Delegate.CreateDelegate(delegateType, p_MethodOwner, p_MethodInfo);
+    }
+
+    public static Action<T1, T2, T3, T4> GenerateDelegate<T1, T2, T3, T4>(MethodInfo p_MethodInfo, UnityEngine.Object p_MethodOwner, SerializableDelegateBase p_Delegate)
+    {
+        Type delegateType = GenerateGenericDelegateType(p_Delegate);
+        return (Action<T1, T2, T3, T4>)Delegate.CreateDelegate(delegateType, p_MethodOwner, p_MethodInfo);
+    }
 }
 
 [Serializable]
@@ -121,20 +167,17 @@ public class SerializableDelegateNoParam : SerializableDelegateBase
     {
         if (!CheckMethodeSearchingInformations()) return;
 
-        MethodInfo methodInfo;
-        BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-
-        methodInfo = _methodOwner.GetType().GetMethod(_methodName, flags);
-        if (methodInfo == null)
-        {
-            Debug.LogError($"Method '{_methodName}' not found on target '{_methodOwner}'.");
-            return;
-        }
+        MethodInfo methodInfo = SerializableDelegateBase.GenerateMethodInfo(_methodOwner, _methodName, this);
         _cachedDelegate = (Action)Delegate.CreateDelegate(typeof(Action), _methodOwner, methodInfo);
     }
 
     public void Invoke()
     {
+        if (_cachedDelegate.Target == null)
+        {
+            Debug.LogError($"Trying to launch an action from a null object. Owner null : {_methodOwner}, method name : {_methodName}");
+            return;
+        }
         _cachedDelegate?.Invoke();
     }
 }
@@ -145,26 +188,34 @@ public class SerializableDelegateOneParam<T> : SerializableDelegateBase
     private Action<T> _cachedDelegate;
 
     public void SetCallBack(Action<T> p_CallBack)
-        { _cachedDelegate = p_CallBack; }
+    { _cachedDelegate = p_CallBack; }
+
+    public void SetCallBack(string p_MethodName, UnityEngine.Object p_target, UnityEngine.Object p_methodOwner)
+    {
+        _targetSelector = p_target;
+        _methodOwner = p_methodOwner;
+        _methodName = p_MethodName;
+
+        InitDelegate();
+    }
 
     public override void InitDelegate()
     {
         if (!CheckMethodeSearchingInformations()) return;
 
-        MethodInfo methodInfo;
-        BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        MethodInfo methodInfo = SerializableDelegateBase.GenerateMethodInfo(_methodOwner, _methodName, this);
+        Debug.Assert(methodInfo != null, $"Method '{_methodName}' not found on target '{_methodOwner}'.");
 
-        methodInfo = _methodOwner.GetType().GetMethod(_methodName, flags, null, new Type[] { typeof(T) }, null);
-        if (methodInfo == null)
-        {
-            Debug.LogError($"Method '{_methodName}' not found on target '{_methodOwner}'.");
-            return;
-        }
-        _cachedDelegate = (Action<T>)Delegate.CreateDelegate(typeof(Action<T>), _methodOwner, methodInfo);
+        _cachedDelegate = SerializableDelegateBase.GenerateDelegate<T>(methodInfo, _methodOwner, this);
     }
 
     public void Invoke(T p_Value)
     {
+        if (_cachedDelegate.Target == null)
+        {
+            Debug.LogError($"Trying to launch an action from a null object. Owner null : {_methodOwner}, method name : {_methodName}");
+            return;
+        }
         _cachedDelegate.Invoke(p_Value);
     }
 }

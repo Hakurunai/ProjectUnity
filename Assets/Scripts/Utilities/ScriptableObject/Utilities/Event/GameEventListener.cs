@@ -7,9 +7,9 @@ public class GameEventListener : MonoBehaviour
     [SerializeField] SerializableDelegateNoParam Delegate;
 
 
-    [SerializeField] SerializableDelegateOneParam<bool> DelegateBool;
+    [SerializeField] SerializableDelegateOneParam<int> DelegateBool;
 
-    protected void TestDelegate(bool p_value = true)
+    protected void TestDelegate(int p_value = 5)
     {
         Debug.Log($"The parameter value is : {p_value}");
     }
@@ -19,14 +19,14 @@ public class GameEventListener : MonoBehaviour
     {
         Delegate.InitDelegate();
 
-        DelegateBool.SetCallBack(TestDelegate);
+        DelegateBool.SetCallBack("TestDelegate", this, this);
     }
 
     protected void OnEnable()
     {
         Event.RegisterListener(this);
 
-        DelegateBool.Invoke(false);
+        DelegateBool.Invoke(5);
     }
 
     protected void OnDisable()

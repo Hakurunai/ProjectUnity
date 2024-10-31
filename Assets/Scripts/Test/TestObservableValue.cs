@@ -26,15 +26,17 @@ public class TestObservableValue : MonoBehaviour
 
     void Init()
     {
-        //valueToObserve.InitObservable();
-        //ValueUpdated.Invoke();
+        valueToObserve.InitObservable();
+        ValueUpdated.Invoke();
 
+        SerializableDelegate.InitDelegate();
+        SerializableDelegate.Invoke();
 
-        //SerializableDelegate.InitDelegate();
-        //SerializableDelegate.Invoke();
+        //CheckPerf();        
+    }
 
-        
-
+    void CheckPerf()
+    {
         double startTime;
         double endTimeUnityEvent;
         double endTimeSerializableDelegate;

@@ -4,6 +4,6 @@ public class Print : MonoBehaviour
 {
     public void PrintMessage()
     {
-        //Debug.Log("Yay");
+        Debug.Log("Yay");
     }
 }
