@@ -93,14 +93,23 @@ using static UnityEngine.GraphicsBuffer;
 //    }
 //}
 
-
 [Serializable]
 public abstract class SerializableDelegateBase
 {
-    [SerializeField] protected UnityEngine.Object _targetSelector;
+    [SerializeField, Tooltip("Work with GameObject and ScriptableObject")] protected UnityEngine.Object _targetSelector;
     [SerializeField] protected UnityEngine.Object _methodOwner; //this value is setted via the drawer of the class
     [SerializeField] protected string _methodName; //this value is setted via the drawer of the class
     public abstract void InitDelegate();
+
+    protected bool CheckMethodeSearchingInformations()
+    {
+        if (_targetSelector == null || string.IsNullOrEmpty(_methodName) || _methodOwner == null)
+        {
+            Debug.LogError($"Target field and/or MethodName is incorrect.");
+            return false;
+        }
+        return true;
+    }
 }
 
 [Serializable]
@@ -110,14 +119,12 @@ public class SerializableDelegateNoParam : SerializableDelegateBase
     
     public override void InitDelegate()
     {
-        if (_targetSelector == null || string.IsNullOrEmpty(_methodName) ||_methodOwner == null)
-        {
-            Debug.LogError($"Target field and/or MethodName provided is null.");
-            return;
-        }
-        MethodInfo methodInfo;
+        if (!CheckMethodeSearchingInformations()) return;
 
-        methodInfo = _methodOwner.GetType().GetMethod(_methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        MethodInfo methodInfo;
+        BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+        methodInfo = _methodOwner.GetType().GetMethod(_methodName, flags);
         if (methodInfo == null)
         {
             Debug.LogError($"Method '{_methodName}' not found on target '{_methodOwner}'.");
@@ -132,17 +139,32 @@ public class SerializableDelegateNoParam : SerializableDelegateBase
     }
 }
 
+[Serializable]
 public class SerializableDelegateOneParam<T> : SerializableDelegateBase
 {
     private Action<T> _cachedDelegate;
 
+    public void SetCallBack(Action<T> p_CallBack)
+        { _cachedDelegate = p_CallBack; }
+
     public override void InitDelegate()
     {
-       
+        if (!CheckMethodeSearchingInformations()) return;
+
+        MethodInfo methodInfo;
+        BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+        methodInfo = _methodOwner.GetType().GetMethod(_methodName, flags, null, new Type[] { typeof(T) }, null);
+        if (methodInfo == null)
+        {
+            Debug.LogError($"Method '{_methodName}' not found on target '{_methodOwner}'.");
+            return;
+        }
+        _cachedDelegate = (Action<T>)Delegate.CreateDelegate(typeof(Action<T>), _methodOwner, methodInfo);
     }
 
     public void Invoke(T p_Value)
     {
-
+        _cachedDelegate.Invoke(p_Value);
     }
 }

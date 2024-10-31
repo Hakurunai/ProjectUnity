@@ -48,8 +48,8 @@ public class SerializableDelegateDrawer : PropertyDrawer
         yOffset += yLargeSeparator;
         Rect targetRect = new Rect(boxRect.x, yOffset, boxRect.width, EditorGUIUtility.singleLineHeight);
         EditorGUI.PropertyField(targetRect, targetSelectorProperty);
-
         UnityEngine.Object targetObject = targetSelectorProperty.objectReferenceValue;
+
         if (targetObject == null)
         {
             EndPropertyDrawing(indent);

@@ -5,15 +5,28 @@ public class GameEventListener : MonoBehaviour
 {
     [SerializeField] GameEvent Event;
     [SerializeField] SerializableDelegateNoParam Delegate;
+
+
+    [SerializeField] SerializableDelegateOneParam<bool> DelegateBool;
+
+    protected void TestDelegate(bool p_value = true)
+    {
+        Debug.Log($"The parameter value is : {p_value}");
+    }
+
+
     protected void Awake()
     {
         Delegate.InitDelegate();
+
+        DelegateBool.SetCallBack(TestDelegate);
     }
 
     protected void OnEnable()
     {
         Event.RegisterListener(this);
 
+        DelegateBool.Invoke(false);
     }
 
     protected void OnDisable()
