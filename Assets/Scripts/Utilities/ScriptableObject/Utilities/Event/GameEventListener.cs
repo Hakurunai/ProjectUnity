@@ -3,6 +3,7 @@ using UnityEngine.Events;
 
 public class GameEventListener : MonoBehaviour
 {
+    
     [SerializeField] GameEvent Event;
     [SerializeField] SerializableDelegateNoParam Delegate;
 

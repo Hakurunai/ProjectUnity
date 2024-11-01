@@ -10,7 +10,7 @@ public class TestObservableValue : MonoBehaviour
 
     public UnityEvent ValueUpdated;
 
-    public SerializableDelegateNoParam SerializableDelegate;
+    public SerializableDelegateNoParam SerializableDelegate1;
 
     public int PerfMeasureNbIteration = 100000;
 
@@ -29,8 +29,8 @@ public class TestObservableValue : MonoBehaviour
         valueToObserve.InitObservable();
         ValueUpdated.Invoke();
 
-        SerializableDelegate.InitDelegate();
-        SerializableDelegate.Invoke();
+        SerializableDelegate1.InitDelegate();
+        SerializableDelegate1.Invoke();
 
         //CheckPerf();        
     }
@@ -55,13 +55,13 @@ public class TestObservableValue : MonoBehaviour
         Debug.Log("Unity_Event execution time: " + endTimeUnityEvent + " seconds");
 
 
-        SerializableDelegate.InitDelegate();
+        SerializableDelegate1.InitDelegate();
 
         startTime = Time.realtimeSinceStartup;
 
         for (int i = 0; i < PerfMeasureNbIteration; ++i)
         {
-            SerializableDelegate.Invoke();
+            SerializableDelegate1.Invoke();
         }
 
         endTimeSerializableDelegate = Time.realtimeSinceStartup - startTime;

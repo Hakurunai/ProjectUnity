@@ -1,0 +1,58 @@
+.section {
+    align-self: auto;
+    justify-content: flex-start;
+    padding-top: 0;
+    padding-right: 2px;
+    padding-bottom: 0;
+    padding-left: 2px;
+    margin-top: 3px;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    background-color: var(--unity-colors-window-background);
+}
+
+.borderBox {
+    border-left-color: var(--unity-colors-tooltip-border);
+    border-right-color: var(--unity-colors-tooltip-border);
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-color: var(--unity-colors-tooltip-border);
+    border-bottom-color: var(--unity-colors-tooltip-border);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.background {
+    background-color: var(--unity-colors-toolbar_button-background-hover);
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+}
+
+.errorBox {
+    border-top-width: 3px;
+    border-right-width: 3px;
+    border-bottom-width: 3px;
+    border-left-width: 3px;
+    border-left-color: var(--unity-colors-error-text);
+    border-right-color: var(--unity-colors-error-text);
+    border-top-color: var(--unity-colors-error-text);
+    border-bottom-color: var(--unity-colors-error-text);
+    background-color: var(--unity-colors-app_toolbar_button-background-checked);
+    min-width: 30px;
+    min-height: 30px;
+}
+
+.errorBoxIcon {
+    background-image: var(--unity-icons-console_entry_error);
+}
