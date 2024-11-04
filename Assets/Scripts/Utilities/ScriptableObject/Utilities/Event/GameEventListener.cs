@@ -10,6 +10,8 @@ public class GameEventListener : MonoBehaviour
 
     [SerializeField] SerializableDelegateOneParam<int> DelegateBool;
 
+    [SerializeField] UnityEvent UEvent;
+
     protected void TestDelegate(int p_value = 5)
     {
         Debug.Log($"The parameter value is : {p_value}");

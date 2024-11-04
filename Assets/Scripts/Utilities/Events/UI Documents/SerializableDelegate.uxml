@@ -1,14 +1,13 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <Style src="project://database/Assets/Scripts/Utilities/Events/USS/SerializableDelegate.uss?fileID=7433441132597879392&amp;guid=8f454d15d2a60384dacfa5337619a024&amp;type=3#SerializableDelegate" />
-    <ui:VisualElement name="Root" class="background" style="flex-grow: 1; min-width: 50px; min-height: 50px; max-width: none; max-height: 300px;">
-        <ui:Label tabindex="-1" text="Delegate name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="DelegateName" focusable="false" class="borderBox section" style="margin-top: 0;" />
-        <ui:VisualElement name="Datas" class="borderBox" style="flex-grow: 1;">
+    <ui:VisualElement name="Root" class="background borderBox" style="flex-grow: 1; min-width: 50px; min-height: 50px; max-width: none; max-height: 300px;">
+        <ui:Label tabindex="-1" text="Delegate name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="DelegateName" focusable="false" class="section title" style="margin-top: 0;" />
+        <ui:VisualElement name="TargetSection" class="section" style="flex-grow: 1; margin-top: 3px; flex-direction: column; align-self: stretch; border-left-color: rgba(241, 0, 0, 0); border-right-color: rgba(241, 0, 0, 0); border-top-color: rgba(241, 0, 0, 0); border-bottom-color: rgba(241, 0, 0, 0);">
             <uie:ObjectField label="Target" name="Target" tooltip="A scene object or a scriptable object" />
-            <ui:VisualElement name="TargetErrorBox" class="errorBox" style="flex-grow: 1; justify-content: flex-start; align-items: flex-start; border-top-width: 3px; border-right-width: 3px; border-bottom-width: 3px; border-left-width: 3px; visibility: visible; display: none; max-height: 100px; height: auto; flex-direction: row; flex-wrap: nowrap; -unity-text-align: upper-left; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-right: 45px;">
-                <ui:Label tabindex="-1" text="Labelfqsfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" parse-escape-sequences="true" display-tooltip-when-elided="true" name="TargetErrorMessage" style="flex-direction: column; flex-wrap: nowrap; align-items: flex-start; flex-basis: auto; align-self: auto; white-space: normal; -unity-text-align: upper-left; visibility: visible; top: 0;" />
-                <ui:VisualElement name="TargetErrorIcon" class="errorBoxIcon" style="flex-grow: 1; -unity-background-image-tint-color: rgb(255, 255, 255); background-color: rgba(0, 0, 0, 0); border-top-width: 0; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; width: 50px; height: 50px; max-width: 50px; min-width: 20px; max-height: 50px; min-height: 20px; position: relative; left: auto; align-items: center; justify-content: flex-start; transform-origin: center;" />
-            </ui:VisualElement>
-            <ui:Foldout text="Native Inspector" name="Default_Inspector" class="section" style="justify-content: flex-start; align-self: auto;" />
         </ui:VisualElement>
+        <ui:VisualElement name="MethodSelectorSection" class="section" style="flex-grow: 1;">
+            <ui:DropdownField label="Method" />
+        </ui:VisualElement>
+        <ui:Foldout text="Native Inspector" name="Default_Inspector" class="section" style="justify-content: flex-start; align-self: auto;" />
     </ui:VisualElement>
 </ui:UXML>

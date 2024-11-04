@@ -10,7 +10,16 @@ using UnityEditor.UIElements;
 public class SerializableDelegateDrawer : PropertyDrawer
 {
     public VisualTreeAsset m_InspectorXML;
-    
+    VisualElement root;
+
+    Label delegateName;
+
+    ObjectField targetSelector;
+    UnityEngine.Object lastTargetValidValue;
+    HelpBox targetSelectorHelp;
+
+    VisualElement targetSection;
+
     public SerializableDelegateDrawer()
     {
         // Load your UXML asset. Ensure to use the correct path.
@@ -19,65 +28,90 @@ public class SerializableDelegateDrawer : PropertyDrawer
 
     public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
-        VisualElement root = m_InspectorXML.CloneTree();
+        root = m_InspectorXML.CloneTree();
 
-        
-        var delegateName = root.Q<Label>("DelegateName");
-        var target = root.Q<ObjectField>("Target");
-        var errorBox = root.Q<VisualElement>("TargetErrorBox");
-
-
-        delegateName.text = property.displayName;
-        target.BindProperty(property.FindPropertyRelative("_targetSelector"));
-
-
-        target.RegisterValueChangedCallback(evt =>
-        {
-            if (target.value != null)
-            {
-                Debug.Log("A value is assigned");
-                errorBox.style.display = DisplayStyle.None;
-            }
-            else
-            {
-                Debug.Log("Something is wrong");
-                errorBox.style.display = DisplayStyle.Flex;
-            }
-        });
+        GetProperty(root);
+        BindProperty(property);
+        RegisterCallback();
+       
 
 
         // Get a reference to the default Inspector Foldout control.
         VisualElement InspectorFoldout = root.Q("Default_Inspector");
         // Create a property field for the default inspector representation
         var propertyField = new PropertyField(property);
-        InspectorFoldout.Add(propertyField);        
+        InspectorFoldout.Add(propertyField);
 
         return root;
     }
 
+    private void RegisterCallback()
+    {
+        targetSelector.RegisterValueChangedCallback(TargetSelectorValueChangedCallback);
+    }
+
+    private void TargetSelectorValueChangedCallback(ChangeEvent<UnityEngine.Object> evt)
+    {
+        // Ensure HelpBox is created only once
+        if (targetSelectorHelp == null)
+        {
+            targetSelectorHelp = new HelpBox("A target must be set.", HelpBoxMessageType.Warning);
+            targetSection.Add(targetSelectorHelp);
+        }
+
+        if (evt.newValue == null)
+        {
+            targetSelectorHelp.visible = true;
+            targetSelectorHelp.style.display = DisplayStyle.Flex;
+            lastTargetValidValue = null;
+            return;
+        }
+
+        if (IsTargetTypeValide(evt.newValue))
+        {
+            targetSelectorHelp.visible = false;
+            targetSelectorHelp.style.display = DisplayStyle.None;
+            lastTargetValidValue = evt.newValue;
+        }
+        else
+        {
+            Debug.LogWarning($"{evt.newValue.GetType()} is an invalid type! Please assign a GameObject from the scene or a ScriptableObject. " +
+                $"Reverting to the last previous valid value.");
+            targetSelector.value = lastTargetValidValue;
+        }
+    }
+
+    private void BindProperty(SerializedProperty p_property)
+    {
+        delegateName.text = p_property.displayName;
+
+
+        // Find the correct property
+        var targetProperty = p_property.FindPropertyRelative("_targetSelector");
+
+        if (targetProperty != null)
+        {
+            targetSelector.BindProperty(targetProperty); // Bind ObjectField to _targetSelector
+            lastTargetValidValue = targetProperty.objectReferenceValue;
+        }
+    }
+
+    private void GetProperty(VisualElement p_root)
+    {
+        delegateName = p_root.Q<Label>("DelegateName");
+        targetSelector = p_root.Q<ObjectField>("Target");
+
+        targetSection = p_root.Q<VisualElement>("TargetSection");
+    }
 
     private bool IsTargetTypeValide(UnityEngine.Object p_NewValue)
     {
-        var gameObjTest = p_NewValue as GameObject;
-        var scriptableTest = p_NewValue as ScriptableObject;
+        if (p_NewValue == null) return false;
 
-        if (!(gameObjTest != null || scriptableTest != null))
-        {
-            Debug.LogWarning($"{p_NewValue.GetType()} is an invalid type ! Please assign a GameObject" +
-            $" from the scene or a ScriptableObject.");
-            return false;
-        }
+        if (p_NewValue is GameObject || p_NewValue is ScriptableObject)
+            return true;
 
-        MonoBehaviour mono = p_NewValue as MonoBehaviour;
-        MonoScript monoScript = MonoScript.FromMonoBehaviour(mono);
-
-        if (PrefabUtility.IsPartOfPrefabAsset(p_NewValue) || !string.IsNullOrEmpty(AssetDatabase.GetAssetPath(monoScript)))
-        {
-            Debug.LogWarning($"{p_NewValue.GetType()} is an invalid type ! Please assign a GameObject" +
-            $" from the scene or a ScriptableObject.");
-            return false;
-        }
-        return true;
+        return false;
     }
     
 
