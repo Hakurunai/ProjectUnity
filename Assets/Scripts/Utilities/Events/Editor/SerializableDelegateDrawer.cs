@@ -5,20 +5,37 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 [CustomPropertyDrawer(typeof(SerializableDelegateNoParam), true)] // 'true' applies to derived classes
 public class SerializableDelegateDrawer : PropertyDrawer
 {
+    enum SelectionState
+    {
+        None = 0,
+        TargetIsAScriptableObject,
+        TargetIsAGameObject,
+        UnusableType
+    }
+
     public VisualTreeAsset m_InspectorXML;
     VisualElement root;
+    VisualElement targetSection;
 
-    Label delegateName;
+    Label delegateNameLabel;
 
     ObjectField targetSelector;
     UnityEngine.Object lastTargetValidValue;
     HelpBox targetSelectorHelp;
 
-    VisualElement targetSection;
+    DropdownField componentSelector;
+    DropdownField methodSelector;
+
+    SelectionState selectionState = SelectionState.None;
+
+    SerializedProperty thisProperty;
+    SerializedProperty methodOwner;
 
     public SerializableDelegateDrawer()
     {
@@ -29,12 +46,12 @@ public class SerializableDelegateDrawer : PropertyDrawer
     public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
         root = m_InspectorXML.CloneTree();
+        thisProperty = property;
 
-        GetProperty(root);
-        BindProperty(property);
-        RegisterCallback();
-       
-
+        GetProperty();
+        BindProperties(property);
+        RegisterCallback(property);
+        SetDatas(property);
 
         // Get a reference to the default Inspector Foldout control.
         VisualElement InspectorFoldout = root.Q("Default_Inspector");
@@ -45,9 +62,186 @@ public class SerializableDelegateDrawer : PropertyDrawer
         return root;
     }
 
-    private void RegisterCallback()
+    private void GetProperty()
+    {
+        delegateNameLabel = root.Q<Label>("DelegateName");
+        targetSelector = root.Q<ObjectField>("Target");
+        targetSection = root.Q<VisualElement>("TargetSection");
+
+        componentSelector = root.Q<DropdownField>("ComponentSelector");
+        methodSelector = root.Q<DropdownField>("MethodSelector");
+    }
+
+    private void BindProperties(SerializedProperty p_property)
+    {
+        BindProperty(p_property, targetSelector, "_targetSelector");
+        BindProperty(p_property, methodSelector, "_methodName");
+
+        methodOwner = p_property.FindPropertyRelative("_methodOwner");
+    }
+
+    private void BindProperty(SerializedProperty p_property, IBindable p_uiView, string p_propertyName)
+    {
+        var targetProperty = p_property.FindPropertyRelative(p_propertyName);
+        if (targetProperty != null)
+        {
+            p_uiView.BindProperty(targetProperty);
+        }
+    }
+
+    private void SetDatas(SerializedProperty p_property)
+    {
+        delegateNameLabel.text = p_property.displayName;
+
+        //The bindings seems to no be totally correct at that point, so we can get the data through the SerializedProperty to avoid a null ref
+        var targetSelec = p_property.FindPropertyRelative("_targetSelector");
+        lastTargetValidValue = targetSelec.objectReferenceValue;
+        if (targetSelec.objectReferenceValue == null)
+            selectionState = SelectionState.None;
+        else
+            selectionState = targetSelec.objectReferenceValue is GameObject ? SelectionState.TargetIsAGameObject :
+                             targetSelec.objectReferenceValue is ScriptableObject ? SelectionState.TargetIsAScriptableObject : SelectionState.UnusableType;
+
+        ShowCompoAndMethodSelectors();
+    }
+
+    private void PopulateComponentDropdown()
+    {
+        Debug.Assert(targetSelector.value != null, $"Target selector {targetSelector} from property drawer of SerializableDelegate is null");
+        GameObject gameObject = (GameObject)targetSelector.value;
+        Component[] components = gameObject.GetComponents<Component>();
+
+        List<string> uniqueComponentsName = new List<string>();
+
+        {
+            Dictionary<string, int> componentNameCounts = new Dictionary<string, int>();
+            foreach (Component component in components)
+            {
+                string name = component.GetType().Name;
+
+                //we will treat duplicate by adding a number to each of them
+                if (!componentNameCounts.ContainsKey(name))
+                {
+                    componentNameCounts[name] = 1;
+                    uniqueComponentsName.Add(name);
+                }
+                else
+                {
+                    uniqueComponentsName.Add($"{name}({componentNameCounts[name]})");
+                    componentNameCounts[name]++;
+                }
+            }
+        }
+        componentSelector.choices = uniqueComponentsName;
+
+        // Find the currently selected component index
+        Component selectedComponent = methodOwner.objectReferenceValue as Component;
+        int selectedIndex = selectedComponent != null ? Array.IndexOf(components, selectedComponent) : 0;
+        componentSelector.value = componentSelector.choices[selectedIndex];
+    }
+
+    private void PopulateMethodDropDown()
+    {
+
+    }
+
+    private void PopulateDropdowns()
+    {
+        switch(selectionState)
+        {
+            case SelectionState.TargetIsAGameObject:
+                PopulateComponentDropdown();
+                PopulateMethodDropDown();
+                break;
+            
+            case SelectionState.TargetIsAScriptableObject:
+                PopulateMethodDropDown();
+                break;
+
+            //group those two states
+            case SelectionState.None:        
+            case SelectionState.UnusableType:
+
+                //Special case with NONE
+                break;
+        }
+    }
+
+    private void ShowCompoAndMethodSelectors()
+    {
+        switch(selectionState)
+        {
+            case SelectionState.None:
+                HideVisualElement(new VisualElement[] { componentSelector, methodSelector });
+                break;
+
+            case SelectionState.TargetIsAGameObject:
+                HideVisualElement(new VisualElement[] { methodSelector });
+                ShowVisualElement(new VisualElement[] { componentSelector });
+                break;
+
+            case SelectionState.TargetIsAScriptableObject:
+                HideVisualElement(new VisualElement[] { componentSelector });
+                ShowVisualElement(new VisualElement[] { methodSelector });
+                break;
+
+            case SelectionState.UnusableType:
+                break;
+
+            default:
+                throw new NotImplementedException();
+        }
+    }
+
+    //private void PopulateDropdown(Type type, SerializedProperty methodNameProperty)
+    //{
+    //    // Get all valid methods (void return type, no parameters)
+    //    MethodInfo[] methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+    //                               .Where(m => m.GetParameters().Length == 0 && m.ReturnType == typeof(void))
+    //                               .ToArray();
+
+    //    string[] methodNames = methods.Select(m => m.Name).ToArray();
+
+    //    // Find the currently selected method
+    //    string currentMethodName = methodNameProperty.stringValue;
+    //    int selectedIndex = Array.IndexOf(methodNames, currentMethodName);
+    //    if (selectedIndex == -1) selectedIndex = 0; // Default to the first method if not found
+
+    //    // Draw the method dropdown
+    //    Rect methodRect = new Rect(position.x, position.y + yOffset, position.width, EditorGUIUtility.singleLineHeight);
+    //    selectedIndex = EditorGUI.Popup(methodRect, "Method", selectedIndex, methodNames);
+
+    //    // Update the methodName property with the selected method
+    //    if (selectedIndex >= 0 && selectedIndex < methodNames.Length)
+    //    {
+    //        methodNameProperty.stringValue = methodNames[selectedIndex];
+    //    }
+    //}
+
+
+    #region Callbacks
+    private void RegisterCallback(SerializedProperty p_property)
     {
         targetSelector.RegisterValueChangedCallback(TargetSelectorValueChangedCallback);
+        ComponentSelectorValueChangedCallback(p_property);        
+    }
+
+    private void ComponentSelectorValueChangedCallback(SerializedProperty p_property)
+    {
+        componentSelector.RegisterValueChangedCallback(evt =>
+        {
+            GameObject gameObject = (GameObject)targetSelector.value;
+            Component[] components = gameObject.GetComponents<Component>();
+
+            // Find the selected object and assign it to the target property
+            int selectedIndex = componentSelector.choices.IndexOf(evt.newValue);
+
+            if (selectedIndex >= 0 && selectedIndex < components.Count())
+            {
+                methodOwner.objectReferenceValue = components[selectedIndex];
+                p_property.serializedObject.ApplyModifiedProperties();
+            }
+        });        
     }
 
     private void TargetSelectorValueChangedCallback(ChangeEvent<UnityEngine.Object> evt)
@@ -59,59 +253,74 @@ public class SerializableDelegateDrawer : PropertyDrawer
             targetSection.Add(targetSelectorHelp);
         }
 
-        if (evt.newValue == null)
+        IsTargetTypeValide(evt.newValue);
+
+        switch(selectionState)
         {
-            targetSelectorHelp.visible = true;
-            targetSelectorHelp.style.display = DisplayStyle.Flex;
-            lastTargetValidValue = null;
+            //We can group this two states together
+            case SelectionState.TargetIsAGameObject : 
+                PopulateComponentDropdown();
+                goto case SelectionState.TargetIsAScriptableObject; //fall through
+
+            case SelectionState.TargetIsAScriptableObject:
+                HideVisualElement(new VisualElement[] { targetSelectorHelp });
+                PopulateMethodDropDown();
+
+                lastTargetValidValue = evt.newValue;
+                break;
+
+            case SelectionState.None:
+                ShowVisualElement(new VisualElement[] { targetSelectorHelp });
+                lastTargetValidValue = null;                
+                break;
+
+            case SelectionState.UnusableType:
+                Debug.LogWarning($"{evt.newValue.GetType()} is an invalid type! Please assign a GameObject from the scene or a ScriptableObject. " +
+                $"Reverting to the last previous valid value.");
+                targetSelector.value = lastTargetValidValue;
+                break;
+        }
+
+        ShowCompoAndMethodSelectors();
+    }
+    #endregion Callbacks
+
+    private void HideVisualElement(VisualElement[] p_elements)
+    {
+        foreach (VisualElement element in p_elements)
+        {
+            element.visible = false;
+            element.style.display = DisplayStyle.None;
+        }
+    }
+
+    private void ShowVisualElement(VisualElement[] p_elements)
+    {
+        foreach (VisualElement element in p_elements)
+        {
+            element.visible = true;
+            element.style.display = DisplayStyle.Flex;
+        }
+    }
+
+    private void IsTargetTypeValide(UnityEngine.Object p_NewValue)
+    {
+        if (p_NewValue == null)
+        {
+            selectionState = SelectionState.None;
             return;
         }
 
-        if (IsTargetTypeValide(evt.newValue))
+        if (p_NewValue is GameObject)
         {
-            targetSelectorHelp.visible = false;
-            targetSelectorHelp.style.display = DisplayStyle.None;
-            lastTargetValidValue = evt.newValue;
+            selectionState = SelectionState.TargetIsAGameObject;
+        }
+        else if (p_NewValue is ScriptableObject)
+        {
+            selectionState = SelectionState.TargetIsAScriptableObject;
         }
         else
-        {
-            Debug.LogWarning($"{evt.newValue.GetType()} is an invalid type! Please assign a GameObject from the scene or a ScriptableObject. " +
-                $"Reverting to the last previous valid value.");
-            targetSelector.value = lastTargetValidValue;
-        }
-    }
-
-    private void BindProperty(SerializedProperty p_property)
-    {
-        delegateName.text = p_property.displayName;
-
-
-        // Find the correct property
-        var targetProperty = p_property.FindPropertyRelative("_targetSelector");
-
-        if (targetProperty != null)
-        {
-            targetSelector.BindProperty(targetProperty); // Bind ObjectField to _targetSelector
-            lastTargetValidValue = targetProperty.objectReferenceValue;
-        }
-    }
-
-    private void GetProperty(VisualElement p_root)
-    {
-        delegateName = p_root.Q<Label>("DelegateName");
-        targetSelector = p_root.Q<ObjectField>("Target");
-
-        targetSection = p_root.Q<VisualElement>("TargetSection");
-    }
-
-    private bool IsTargetTypeValide(UnityEngine.Object p_NewValue)
-    {
-        if (p_NewValue == null) return false;
-
-        if (p_NewValue is GameObject || p_NewValue is ScriptableObject)
-            return true;
-
-        return false;
+            selectionState = SelectionState.UnusableType;
     }
     
 

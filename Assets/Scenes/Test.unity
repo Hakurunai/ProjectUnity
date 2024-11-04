@@ -133,6 +133,7 @@ GameObject:
   - component: {fileID: 72577771}
   - component: {fileID: 72577769}
   - component: {fileID: 72577772}
+  - component: {fileID: 72577773}
   m_Layer: 0
   m_Name: TestSOEvent
   m_TagString: Untagged
@@ -182,7 +183,7 @@ MonoBehaviour:
   Event: {fileID: 11400000, guid: 3e6ab51dc76cc344f95efb2df9c0c3d9, type: 2}
   Delegate:
     _targetSelector: {fileID: 72577768}
-    _methodOwner: {fileID: 72577769}
+    _methodOwner: {fileID: 72577772}
     _methodName: PrintMessage
   DelegateBool:
     _targetSelector: {fileID: 0}
@@ -191,9 +192,9 @@ MonoBehaviour:
   UEvent:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 72577771}
-        m_TargetAssemblyTypeName: UnityEngine.Transform, UnityEngine
-        m_MethodName: set_hierarchyCapacity
+      - m_Target: {fileID: 72577768}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: set_layer
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -203,6 +204,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &72577773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 72577768}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6531299666ee5a04ba2f906139d98c45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &178832102
 GameObject:
   m_ObjectHideFlags: 0
