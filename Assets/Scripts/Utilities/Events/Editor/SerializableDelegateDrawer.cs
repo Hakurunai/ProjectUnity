@@ -7,8 +7,6 @@ using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 using System.Collections.Generic;
 using System.Collections;
-using NUnit.Framework;
-using System.Runtime.Serialization;
 
 [CustomPropertyDrawer(typeof(SerializableDelegateNoParam), true)] // 'true' applies to derived classes
 public class SerializableDelegateDrawer : PropertyDrawer
@@ -118,13 +116,10 @@ public class SerializableDelegateDrawer : PropertyDrawer
     private void PopulateMethodDropDown()
     {
         Debug.Assert(targetSelector.value != null, $"Target selector {targetSelector} from property drawer of SerializableDelegate is null");
-
-        Component[] components;
         switch(selectionState)
         {
             case SelectionState.TargetIsAGameObject:
-                GameObject gameObject = (GameObject)targetSelector.value;
-                components = gameObject.GetComponents<Component>();
+                GenerateComponentsMethod();
                 break;
 
             case SelectionState.TargetIsAScriptableObject:
@@ -135,48 +130,69 @@ public class SerializableDelegateDrawer : PropertyDrawer
                 return;
         }
 
-        //TODO : Case GameObject -> encapsulate in a method
-        //Get all the components of the target object
-        List<string> uniqueMethodsName = new List<string>();
-        
-        Dictionary<string, int> componentNameCounts = new Dictionary<string, int>();
-        foreach (Component component in components)
-        {
-            Type componentType = component.GetType();
-            string componentName = componentType.Name;
-            string methodName = string.Empty;
 
-            MethodInfo[] methodsInfo = componentType.GetMethods(BindingFlags.Instance | BindingFlags.Public)
-                                            .Where(m => m.ReturnType == typeof(void)
-                                                        && AreParametersSerializableByUnity(m.GetParameters()))
-                                            .ToArray();
-
-            //we will treat duplicate by adding a number to each of them
-            if (!componentNameCounts.ContainsKey(componentName))
-            {
-                componentNameCounts[componentName] = 0; //first one is 0
-            }
-            else
-            {
-                componentNameCounts[componentName]++;
-                componentName = $"{componentName}({componentNameCounts[componentName]})";
-            }
-
-            foreach (MethodInfo method in methodsInfo)
-            {
-                methodName = $"{componentName}/{method.Name}";
-                uniqueMethodsName.Add(methodName);
-            }
-        }
-        
-        methodSelector.choices = uniqueMethodsName;
-
-        // Find the currently selected component index
-        Component selectedComponent = methodOwner.objectReferenceValue as Component;
-        int selectedIndex = selectedComponent != null ? Array.IndexOf(components, selectedComponent) : 0;
-        methodSelector.value = methodSelector.choices[selectedIndex];
     }
 
+    private void GenerateComponentsMethod()
+    {
+        GameObject gameObject = (GameObject)targetSelector.value;
+        Component[] components = gameObject.GetComponents<Component>();
+
+        //Get all the components of the target object
+        List<string> uniqueMethodsName = new List<string>();
+        Dictionary<string, int> componentNameCounts = new Dictionary<string, int>();
+
+        foreach (Component component in components)
+        {
+            PopulateListMethodNameFromType(component.GetType(), uniqueMethodsName, componentNameCounts);
+        }
+        //TODO : Set the currently value as the value of the Selector
+        methodSelector.choices = uniqueMethodsName;
+
+        //// Find the currently selected component index
+        //Component selectedComponent = methodOwner.objectReferenceValue as Component;
+        //int selectedIndex = selectedComponent != null ? Array.IndexOf(components, selectedComponent) : 0;
+        //methodSelector.value = methodSelector.choices[selectedIndex];
+    }
+
+    private static void PopulateListMethodNameFromType(Type p_componentType, List<string> p_methodNames,
+                                                       Dictionary<string, int> p_componentNameCounts)
+    {
+        string componentName = GenerateComponentName(p_componentType, p_componentNameCounts);
+        string[] methodsName = GenerateMethodNameFromType(p_componentType);
+
+        foreach (string method in methodsName)
+        {
+            p_methodNames.Add($"{componentName}/{method}");
+        }
+    }
+
+    //Getting all the name of the methods through MethodInfo
+    public static string[] GenerateMethodNameFromType(Type p_type)
+    {
+        return p_type.GetMethods(BindingFlags.Instance | BindingFlags.Public)
+                                        .Where(m => m.ReturnType == typeof(void)
+                                                    && AreParametersSerializableByUnity(m.GetParameters()))
+                                        .ToArray()
+                                        .Select(m => m.Name).ToArray();
+    }
+
+    public static string GenerateComponentName(Type p_componentType, Dictionary<string, int> p_componentNameCounts)
+    {
+        string componentName = p_componentType.Name;
+
+        //we will treat duplicate by adding a number to each of them
+        if (!p_componentNameCounts.ContainsKey(componentName))
+        {
+            p_componentNameCounts[componentName] = 0; //first one is 0
+        }
+        else
+        {
+            p_componentNameCounts[componentName]++;
+            componentName = $"{componentName}({p_componentNameCounts[componentName]})";
+        }
+        return componentName;
+    }
 
     private static bool AreParametersSerializableByUnity(ParameterInfo[] parameters)
     {
@@ -191,7 +207,7 @@ public class SerializableDelegateDrawer : PropertyDrawer
         return true;
     }
 
-
+    //caching those types for all instance of this drawer
     private static readonly HashSet<Type> builtInSerializableStruct = new HashSet<Type>
     {
         typeof(Vector2), typeof(Vector3), typeof(Vector4), typeof(Vector2Int), typeof(Vector3Int), typeof(Matrix4x4), typeof(Quaternion),
@@ -203,8 +219,7 @@ public class SerializableDelegateDrawer : PropertyDrawer
         // Check if it's a primitive, enum, or a Unity Object
         if (type.IsPrimitive || type.IsEnum || typeof(UnityEngine.Object).IsAssignableFrom(type))
             return true;
-
-        //caching those types
+        
         if (builtInSerializableStruct.Contains(type))
             return true;
 
@@ -387,95 +402,6 @@ public class SerializableDelegateDrawer : PropertyDrawer
             selectionState = SelectionState.UnusableType;
     }
     
-
-    //public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-    //{
-    //    // Start drawing properties
-    //    EditorGUI.BeginProperty(position, label, property);
-    //    var indent = EditorGUI.indentLevel;
-    //    EditorGUI.indentLevel = 1;
-
-    //    // Get the target object and method name fields
-    //    SerializedProperty targetSelectorProperty = property.FindPropertyRelative("_targetSelector");
-    //    SerializedProperty methodOwnerProperty = property.FindPropertyRelative("_methodOwner");
-    //    SerializedProperty methodNameProperty = property.FindPropertyRelative("_methodName");
-
-    //    Color LineBlack = new Color(0.102f, 0.102f, 0.102f);
-    //    Color BGDarkGrey = new Color(0.207f, 0.207f, 0.207f);
-    //    Color BGLightGrey = new Color(0.274f, 0.274f, 0.274f);
-
-    //    float yOffset = 0f;
-    //    float yLargeSeparator = 6f;
-    //    float yLittleSeparator = 3f;
-
-    //    // Draw the label (variable name)
-    //    Rect labelRect = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
-    //    yOffset += labelRect.height;
-    //    EditorGUI.DrawRect(labelRect, BGDarkGrey);
-    //    EditorGUI.LabelField(labelRect, label);
-
-    //    // Create a box around the property similar to UnityEvents
-    //    Rect boxRect = new Rect(labelRect.x, yOffset, labelRect.width, GetPropertyHeight(property, label) - EditorGUIUtility.singleLineHeight * 2);
-    //    EditorGUI.DrawRect(boxRect, BGLightGrey); // Background color of the box
-
-    //    EditorGUI.DrawRect(new Rect(labelRect.x, labelRect.y, position.width, 1), LineBlack); // Top line
-    //    EditorGUI.DrawRect(new Rect(labelRect.x, labelRect.y + +EditorGUIUtility.singleLineHeight, position.width, 1), LineBlack); // VariableNameSeparatorLine
-    //    EditorGUI.DrawRect(new Rect(boxRect.x, boxRect.y + boxRect.height - 1, boxRect.width, 1), LineBlack); // Bottom line
-    //    EditorGUI.DrawRect(new Rect(labelRect.x, labelRect.y, 1, labelRect.height + boxRect.height), LineBlack); // Left line
-    //    EditorGUI.DrawRect(new Rect(labelRect.x + labelRect.width - 1, labelRect.y, 1, labelRect.height + boxRect.height), LineBlack); // Right line
-
-
-    //    // Draw the target field
-    //    yOffset += yLargeSeparator;
-    //    Rect targetRect = new Rect(boxRect.x, yOffset, boxRect.width, EditorGUIUtility.singleLineHeight);
-    //    EditorGUI.PropertyField(targetRect, targetSelectorProperty);
-    //    UnityEngine.Object targetObject = targetSelectorProperty.objectReferenceValue;
-
-    //    if (targetObject == null)
-    //    {
-    //        EndPropertyDrawing(indent);
-    //        return;
-    //    }
-    //    // If target is a GameObject, show a component dropdown
-    //    if (targetObject is GameObject)
-    //    {
-    //        GameObject gameObject = (GameObject)targetObject;
-    //        Component[] components = gameObject.GetComponents<Component>();
-    //        string[] componentNames = components.Select(c => c.GetType().Name).ToArray();
-
-    //        // Find the currently selected component index
-    //        Component selectedComponent = methodOwnerProperty.objectReferenceValue as Component;
-    //        int selectedIndex = selectedComponent != null ? Array.IndexOf(components, selectedComponent) : 0;
-
-    //        // Draw component dropdown
-    //        yOffset += EditorGUIUtility.singleLineHeight + yLittleSeparator;
-    //        Rect componentRect = new Rect(position.x, yOffset, position.width, EditorGUIUtility.singleLineHeight);
-    //        selectedIndex = EditorGUI.Popup(componentRect, "Component", selectedIndex, componentNames);
-
-    //        if (selectedIndex >= 0 && selectedIndex < components.Length)
-    //        {
-    //            yOffset += EditorGUIUtility.singleLineHeight + yLittleSeparator;
-    //            // If a component is selected, show method dropdown
-    //            Component component = components[selectedIndex];
-    //            DrawMethodDropdown(position, yOffset, component.GetType(), methodNameProperty);
-
-    //            // Update the owner property field with the selected component
-    //            methodOwnerProperty.objectReferenceValue = components[selectedIndex];
-    //        }
-    //    }
-    //    // If target is a ScriptableObject, show method dropdown directly
-    //    else if (targetObject is ScriptableObject)
-    //    {
-    //        yOffset += EditorGUIUtility.singleLineHeight + yLittleSeparator;
-
-    //        ScriptableObject scriptableObject = (ScriptableObject)targetObject;
-    //        DrawMethodDropdown(position, yOffset, scriptableObject.GetType(), methodNameProperty);
-
-    //        methodOwnerProperty.objectReferenceValue = scriptableObject;
-    //    }
-    //    EndPropertyDrawing(indent);
-    //}
-
     private void DrawMethodDropdown(Rect position, float yOffset, Type type, SerializedProperty methodNameProperty)
     {
         // Get all valid methods (void return type, no parameters)
