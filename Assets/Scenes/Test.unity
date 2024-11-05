@@ -183,8 +183,8 @@ MonoBehaviour:
   Event: {fileID: 11400000, guid: 3e6ab51dc76cc344f95efb2df9c0c3d9, type: 2}
   Delegate:
     _targetSelector: {fileID: 72577768}
-    _methodOwner: {fileID: 72577772}
-    _methodName: PrintMessage
+    _methodOwner: {fileID: 0}
+    _methodName: 
   DelegateBool:
     _targetSelector: {fileID: 0}
     _methodOwner: {fileID: 0}
@@ -192,10 +192,10 @@ MonoBehaviour:
   UEvent:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 72577768}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: set_layer
-        m_Mode: 3
+      - m_Target: {fileID: 72577771}
+        m_TargetAssemblyTypeName: UnityEngine.Object, UnityEngine
+        m_MethodName: set_name
+        m_Mode: 5
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine

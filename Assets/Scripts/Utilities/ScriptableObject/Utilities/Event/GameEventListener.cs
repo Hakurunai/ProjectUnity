@@ -3,7 +3,6 @@ using UnityEngine.Events;
 
 public class GameEventListener : MonoBehaviour
 {
-    
     [SerializeField] GameEvent Event;
     [SerializeField] SerializableDelegateNoParam Delegate;
 
@@ -16,7 +15,6 @@ public class GameEventListener : MonoBehaviour
     {
         Debug.Log($"The parameter value is : {p_value}");
     }
-
 
     protected void Awake()
     {

@@ -101,6 +101,7 @@ public abstract class SerializableDelegateBase
     [SerializeField, Tooltip("Work with GameObject and ScriptableObject")] protected UnityEngine.Object _targetSelector;
     [SerializeField] protected UnityEngine.Object _methodOwner; //this value is setted via the drawer of the class
     [SerializeField] protected string _methodName; //this value is setted via the drawer of the class
+
     public abstract void InitDelegate();
 
     protected bool CheckMethodeSearchingInformations()
@@ -118,7 +119,7 @@ public abstract class SerializableDelegateBase
     {
         BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-        Type[] argumentTypes = p_Delegate.GetType().IsGenericType ? 
+        Type[] argumentTypes = p_Delegate.GetType().IsGenericType ?
             p_Delegate.GetType().GetGenericArguments() : Type.EmptyTypes;
 
         MethodInfo method = p_MethodOwner.GetType().GetMethod(p_MethodName, flags, null, argumentTypes, null);

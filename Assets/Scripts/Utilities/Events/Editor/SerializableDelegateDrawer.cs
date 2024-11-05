@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
+using System.Collections;
 
 [CustomPropertyDrawer(typeof(SerializableDelegateNoParam), true)] // 'true' applies to derived classes
 public class SerializableDelegateDrawer : PropertyDrawer
@@ -29,12 +29,10 @@ public class SerializableDelegateDrawer : PropertyDrawer
     UnityEngine.Object lastTargetValidValue;
     HelpBox targetSelectorHelp;
 
-    DropdownField componentSelector;
     DropdownField methodSelector;
 
     SelectionState selectionState = SelectionState.None;
 
-    SerializedProperty thisProperty;
     SerializedProperty methodOwner;
 
     public SerializableDelegateDrawer()
@@ -46,39 +44,48 @@ public class SerializableDelegateDrawer : PropertyDrawer
     public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
         root = m_InspectorXML.CloneTree();
-        thisProperty = property;
 
-        GetProperty();
+        GetUxmlFields();
         BindProperties(property);
         RegisterCallback(property);
         SetDatas(property);
 
-        // Get a reference to the default Inspector Foldout control.
-        VisualElement InspectorFoldout = root.Q("Default_Inspector");
-        // Create a property field for the default inspector representation
-        var propertyField = new PropertyField(property);
-        InspectorFoldout.Add(propertyField);
+        DrawDefaultInspector(property);
 
         return root;
     }
 
-    private void GetProperty()
+    private void GetSerialiezedProperty(SerializedProperty p_property)
+    {
+        methodOwner = p_property.FindPropertyRelative("_methodOwner");
+    }
+
+    private void DrawDefaultInspector(SerializedProperty p_property)
+    {
+        // Get a reference to the default Inspector Foldout control.
+        VisualElement InspectorFoldout = root.Q("Default_Inspector");
+        // Create a property field for the default inspector representation
+        var propertyField = new PropertyField(p_property);
+        InspectorFoldout.Add(propertyField);
+    }
+
+    private void GetUxmlFields()
     {
         delegateNameLabel = root.Q<Label>("DelegateName");
         targetSelector = root.Q<ObjectField>("Target");
         targetSection = root.Q<VisualElement>("TargetSection");
 
-        componentSelector = root.Q<DropdownField>("ComponentSelector");
         methodSelector = root.Q<DropdownField>("MethodSelector");
     }
 
     private void BindProperties(SerializedProperty p_property)
     {
         BindProperty(p_property, targetSelector, "_targetSelector");
-        BindProperty(p_property, methodSelector, "_methodName");
 
-        methodOwner = p_property.FindPropertyRelative("_methodOwner");
+        GetSerialiezedProperty(p_property);
     }
+
+
 
     private void BindProperty(SerializedProperty p_property, IBindable p_uiView, string p_propertyName)
     {
@@ -105,66 +112,129 @@ public class SerializableDelegateDrawer : PropertyDrawer
         ShowCompoAndMethodSelectors();
     }
 
-    private void PopulateComponentDropdown()
+    private void PopulateMethodDropDown()
     {
         Debug.Assert(targetSelector.value != null, $"Target selector {targetSelector} from property drawer of SerializableDelegate is null");
-        GameObject gameObject = (GameObject)targetSelector.value;
-        Component[] components = gameObject.GetComponents<Component>();
 
-        List<string> uniqueComponentsName = new List<string>();
-
+        Component[] components;
+        switch(selectionState)
         {
-            Dictionary<string, int> componentNameCounts = new Dictionary<string, int>();
-            foreach (Component component in components)
-            {
-                string name = component.GetType().Name;
+            case SelectionState.TargetIsAGameObject:
+                GameObject gameObject = (GameObject)targetSelector.value;
+                components = gameObject.GetComponents<Component>();
+                break;
 
-                //we will treat duplicate by adding a number to each of them
-                if (!componentNameCounts.ContainsKey(name))
-                {
-                    componentNameCounts[name] = 1;
-                    uniqueComponentsName.Add(name);
-                }
-                else
-                {
-                    uniqueComponentsName.Add($"{name}({componentNameCounts[name]})");
-                    componentNameCounts[name]++;
-                }
+            case SelectionState.TargetIsAScriptableObject:
+                ScriptableObject scriptObj = (ScriptableObject)targetSelector.value;
+                return;
+
+            default: Debug.LogError($"Selection state {selectionState} is not implemented in PopulateMethodDropDown");
+                return;
+        }
+
+        //TODO : Case GameObject -> encapsulate in a method
+        //Get all the components of the target object
+        List<string> uniqueComponentsName = new List<string>();
+        
+        Dictionary<string, int> componentNameCounts = new Dictionary<string, int>();
+        foreach (Component component in components)
+        {
+            Type type = component.GetType();
+            string name = type.Name + "/";
+
+            MethodInfo[] methodsInfo = type.GetMethods(BindingFlags.Instance | BindingFlags.Public)
+                                            .Where(m => m.ReturnType == typeof(void)
+                                                        && AreParametersSerializableByUnity(m.GetParameters()))
+                                            .ToArray();                                           
+
+            //we will treat duplicate by adding a number to each of them
+            if (!componentNameCounts.ContainsKey(name))
+            {
+                componentNameCounts[name] = 1;
+                uniqueComponentsName.Add(name);
+            }
+            else
+            {
+                uniqueComponentsName.Add($"{name}({componentNameCounts[name]})");
+                componentNameCounts[name]++;
             }
         }
-        componentSelector.choices = uniqueComponentsName;
+        
+        methodSelector.choices = uniqueComponentsName;
 
         // Find the currently selected component index
         Component selectedComponent = methodOwner.objectReferenceValue as Component;
         int selectedIndex = selectedComponent != null ? Array.IndexOf(components, selectedComponent) : 0;
-        componentSelector.value = componentSelector.choices[selectedIndex];
+        methodSelector.value = methodSelector.choices[selectedIndex];
     }
 
-    private void PopulateMethodDropDown()
-    {
 
-    }
-
-    private void PopulateDropdowns()
+    private static bool AreParametersSerializableByUnity(ParameterInfo[] parameters)
     {
-        switch(selectionState)
+        foreach (var param in parameters)
         {
-            case SelectionState.TargetIsAGameObject:
-                PopulateComponentDropdown();
-                PopulateMethodDropDown();
-                break;
-            
-            case SelectionState.TargetIsAScriptableObject:
-                PopulateMethodDropDown();
-                break;
-
-            //group those two states
-            case SelectionState.None:        
-            case SelectionState.UnusableType:
-
-                //Special case with NONE
-                break;
+            Type paramType = param.ParameterType;
+            if (!IsSerializableByUnity(paramType))
+            {
+                return false;
+            }
         }
+        return true;
+    }
+
+    public static bool IsSerializableByUnity(Type type)
+    {
+        // Check if it's a primitive, string, enum, or a Unity Object
+        if (type.IsPrimitive || type == typeof(string) || type.IsEnum || typeof(UnityEngine.Object).IsAssignableFrom(type))
+            return true;
+
+        // If it's an array : check if the element type of the array is serializable
+        if (type.IsArray)
+            return IsSerializableByUnity(type.GetElementType());
+
+        if (typeof(IList).IsAssignableFrom(type) && type.IsGenericType)
+        {
+            // same thing for List<T>
+            if (type.GetGenericTypeDefinition() == typeof(List<>))
+                return IsSerializableByUnity(type.GetGenericArguments()[0]);
+#if false
+            // Optionally handle other generic collections like Dictionary<K,V>
+            if (type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            {
+                var keyType = type.GetGenericArguments()[0];
+                var valueType = type.GetGenericArguments()[1];
+                return IsSerializableByUnity(keyType) && IsSerializableByUnity(valueType);
+            }
+#endif
+        }
+
+        // Check if it’s a class/struct marked as [Serializable]
+        if (type.IsClass || type.IsValueType)
+            return Attribute.IsDefined(type, typeof(SerializableAttribute));
+
+        return false;
+    }
+
+    public static bool IsBuiltInSerializableByUnity(Type type)
+    {
+        //check from UnityEngine.Object inheritance
+        if (typeof(UnityEngine.Object).IsAssignableFrom(type))
+            return true;
+
+        // Check for Unity serializable simple types
+        if (type == typeof(Vector2) || type == typeof(Vector3) || type == typeof(Vector4) ||
+            type == typeof(Vector2Int) || type == typeof(Vector3Int) || type == typeof(Matrix4x4) ||  type == typeof(Quaternion) ||
+            type == typeof(Rect) || type == typeof(RectInt) || type == typeof(Bounds) || type == typeof(BoundsInt) ||  
+            type == typeof(Color) || type == typeof(Color32) || type == typeof(LayerMask))            
+        {
+            return true;
+        }
+
+        // Check for more complex type
+        if (type == typeof(AnimationCurve) || type == typeof(Gradient))
+            return true;
+
+        return false;
     }
 
     private void ShowCompoAndMethodSelectors()
@@ -172,20 +242,18 @@ public class SerializableDelegateDrawer : PropertyDrawer
         switch(selectionState)
         {
             case SelectionState.None:
-                HideVisualElement(new VisualElement[] { componentSelector, methodSelector });
+                HideVisualElement(new VisualElement[] { methodSelector });
                 break;
 
             case SelectionState.TargetIsAGameObject:
-                HideVisualElement(new VisualElement[] { methodSelector });
-                ShowVisualElement(new VisualElement[] { componentSelector });
-                break;
+                goto case SelectionState.TargetIsAScriptableObject; //fall through
 
             case SelectionState.TargetIsAScriptableObject:
-                HideVisualElement(new VisualElement[] { componentSelector });
                 ShowVisualElement(new VisualElement[] { methodSelector });
                 break;
 
             case SelectionState.UnusableType:
+                HideVisualElement(new VisualElement[] { methodSelector });
                 break;
 
             default:
@@ -223,25 +291,25 @@ public class SerializableDelegateDrawer : PropertyDrawer
     private void RegisterCallback(SerializedProperty p_property)
     {
         targetSelector.RegisterValueChangedCallback(TargetSelectorValueChangedCallback);
-        ComponentSelectorValueChangedCallback(p_property);        
+        MethodSelectorValueChangedCallback(p_property);        
     }
 
-    private void ComponentSelectorValueChangedCallback(SerializedProperty p_property)
+    private void MethodSelectorValueChangedCallback(SerializedProperty p_property)
     {
-        componentSelector.RegisterValueChangedCallback(evt =>
-        {
-            GameObject gameObject = (GameObject)targetSelector.value;
-            Component[] components = gameObject.GetComponents<Component>();
+        //methodSelector.RegisterValueChangedCallback(evt =>
+        //{
+        //    GameObject gameObject = (GameObject)targetSelector.value;
+        //    Component[] components = gameObject.GetComponents<Component>();
 
-            // Find the selected object and assign it to the target property
-            int selectedIndex = componentSelector.choices.IndexOf(evt.newValue);
+        //    // Find the selected object and assign it to the target property
+        //    int selectedIndex = 0;// methodSelector.choices.IndexOf(evt.newValue);
 
-            if (selectedIndex >= 0 && selectedIndex < components.Count())
-            {
-                methodOwner.objectReferenceValue = components[selectedIndex];
-                p_property.serializedObject.ApplyModifiedProperties();
-            }
-        });        
+        //    if (selectedIndex >= 0 && selectedIndex < components.Count())
+        //    {
+        //        methodOwner.objectReferenceValue = components[selectedIndex];
+        //        p_property.serializedObject.ApplyModifiedProperties();
+        //    }
+        //});        
     }
 
     private void TargetSelectorValueChangedCallback(ChangeEvent<UnityEngine.Object> evt)
@@ -259,7 +327,6 @@ public class SerializableDelegateDrawer : PropertyDrawer
         {
             //We can group this two states together
             case SelectionState.TargetIsAGameObject : 
-                PopulateComponentDropdown();
                 goto case SelectionState.TargetIsAScriptableObject; //fall through
 
             case SelectionState.TargetIsAScriptableObject:
@@ -435,29 +502,5 @@ public class SerializableDelegateDrawer : PropertyDrawer
         {
             methodNameProperty.stringValue = methodNames[selectedIndex];
         }
-    }
-
-    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-    {
-        SerializedProperty targetProperty = property.FindPropertyRelative("_targetSelector");
-        UnityEngine.Object targetObject = targetProperty.objectReferenceValue;
-        
-        if (targetObject is GameObject)
-        {
-            return EditorGUIUtility.singleLineHeight * 4 + 36; // Height for label, target, component, and method dropdowns, plus padding
-        }
-        else if (targetObject is ScriptableObject)
-        {
-            return EditorGUIUtility.singleLineHeight * 3 + 32; // Height for label and method dropdowns, plus padding
-        }
-        else
-        {
-            return EditorGUIUtility.singleLineHeight * 2 + 30; // Default height if no target
-        }
-    }
-    private void EndPropertyDrawing(int p_indentLevel)
-    {
-        EditorGUI.indentLevel = p_indentLevel;
-        EditorGUI.EndProperty();
     }
 }
