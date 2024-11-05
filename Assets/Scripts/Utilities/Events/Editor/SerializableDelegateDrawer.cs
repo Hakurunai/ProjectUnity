@@ -7,6 +7,8 @@ using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 using System.Collections.Generic;
 using System.Collections;
+using NUnit.Framework;
+using System.Runtime.Serialization;
 
 [CustomPropertyDrawer(typeof(SerializableDelegateNoParam), true)] // 'true' applies to derived classes
 public class SerializableDelegateDrawer : PropertyDrawer
@@ -34,6 +36,7 @@ public class SerializableDelegateDrawer : PropertyDrawer
     SelectionState selectionState = SelectionState.None;
 
     SerializedProperty methodOwner;
+
 
     public SerializableDelegateDrawer()
     {
@@ -134,33 +137,39 @@ public class SerializableDelegateDrawer : PropertyDrawer
 
         //TODO : Case GameObject -> encapsulate in a method
         //Get all the components of the target object
-        List<string> uniqueComponentsName = new List<string>();
+        List<string> uniqueMethodsName = new List<string>();
         
         Dictionary<string, int> componentNameCounts = new Dictionary<string, int>();
         foreach (Component component in components)
         {
-            Type type = component.GetType();
-            string name = type.Name + "/";
+            Type componentType = component.GetType();
+            string componentName = componentType.Name;
+            string methodName = string.Empty;
 
-            MethodInfo[] methodsInfo = type.GetMethods(BindingFlags.Instance | BindingFlags.Public)
+            MethodInfo[] methodsInfo = componentType.GetMethods(BindingFlags.Instance | BindingFlags.Public)
                                             .Where(m => m.ReturnType == typeof(void)
                                                         && AreParametersSerializableByUnity(m.GetParameters()))
-                                            .ToArray();                                           
+                                            .ToArray();
 
             //we will treat duplicate by adding a number to each of them
-            if (!componentNameCounts.ContainsKey(name))
+            if (!componentNameCounts.ContainsKey(componentName))
             {
-                componentNameCounts[name] = 1;
-                uniqueComponentsName.Add(name);
+                componentNameCounts[componentName] = 0; //first one is 0
             }
             else
             {
-                uniqueComponentsName.Add($"{name}({componentNameCounts[name]})");
-                componentNameCounts[name]++;
+                componentNameCounts[componentName]++;
+                componentName = $"{componentName}({componentNameCounts[componentName]})";
+            }
+
+            foreach (MethodInfo method in methodsInfo)
+            {
+                methodName = $"{componentName}/{method.Name}";
+                uniqueMethodsName.Add(methodName);
             }
         }
         
-        methodSelector.choices = uniqueComponentsName;
+        methodSelector.choices = uniqueMethodsName;
 
         // Find the currently selected component index
         Component selectedComponent = methodOwner.objectReferenceValue as Component;
@@ -182,10 +191,21 @@ public class SerializableDelegateDrawer : PropertyDrawer
         return true;
     }
 
+
+    private static readonly HashSet<Type> builtInSerializableStruct = new HashSet<Type>
+    {
+        typeof(Vector2), typeof(Vector3), typeof(Vector4), typeof(Vector2Int), typeof(Vector3Int), typeof(Matrix4x4), typeof(Quaternion),
+        typeof(Rect), typeof(RectInt), typeof(Bounds), typeof(BoundsInt), typeof(Color), typeof(Color32), typeof(LayerMask)
+    };
+
     public static bool IsSerializableByUnity(Type type)
     {
-        // Check if it's a primitive, string, enum, or a Unity Object
-        if (type.IsPrimitive || type == typeof(string) || type.IsEnum || typeof(UnityEngine.Object).IsAssignableFrom(type))
+        // Check if it's a primitive, enum, or a Unity Object
+        if (type.IsPrimitive || type.IsEnum || typeof(UnityEngine.Object).IsAssignableFrom(type))
+            return true;
+
+        //caching those types
+        if (builtInSerializableStruct.Contains(type))
             return true;
 
         // If it's an array : check if the element type of the array is serializable
@@ -207,32 +227,9 @@ public class SerializableDelegateDrawer : PropertyDrawer
             }
 #endif
         }
-
-        // Check if it’s a class/struct marked as [Serializable]
+        // Check if it’s a custom class/struct marked with [Serializable] attribute
         if (type.IsClass || type.IsValueType)
             return Attribute.IsDefined(type, typeof(SerializableAttribute));
-
-        return false;
-    }
-
-    public static bool IsBuiltInSerializableByUnity(Type type)
-    {
-        //check from UnityEngine.Object inheritance
-        if (typeof(UnityEngine.Object).IsAssignableFrom(type))
-            return true;
-
-        // Check for Unity serializable simple types
-        if (type == typeof(Vector2) || type == typeof(Vector3) || type == typeof(Vector4) ||
-            type == typeof(Vector2Int) || type == typeof(Vector3Int) || type == typeof(Matrix4x4) ||  type == typeof(Quaternion) ||
-            type == typeof(Rect) || type == typeof(RectInt) || type == typeof(Bounds) || type == typeof(BoundsInt) ||  
-            type == typeof(Color) || type == typeof(Color32) || type == typeof(LayerMask))            
-        {
-            return true;
-        }
-
-        // Check for more complex type
-        if (type == typeof(AnimationCurve) || type == typeof(Gradient))
-            return true;
 
         return false;
     }

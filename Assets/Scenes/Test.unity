@@ -192,9 +192,9 @@ MonoBehaviour:
   UEvent:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 72577771}
-        m_TargetAssemblyTypeName: UnityEngine.Object, UnityEngine
-        m_MethodName: set_name
+      - m_Target: {fileID: 8400000, guid: 271e5a8890fbb8348aeb325df55cc5e5, type: 2}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: set_tag
         m_Mode: 5
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

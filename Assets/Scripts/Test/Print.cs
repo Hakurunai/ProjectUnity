@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class Print : MonoBehaviour
 {
@@ -23,4 +24,8 @@ public class Print : MonoBehaviour
         Debug.Log(p_message);
     }
 
+    public void PrintMessageFloat(double p_message)
+    {
+        Debug.Log(p_message);
+    }
 }
