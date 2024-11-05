@@ -170,11 +170,17 @@ public class SerializableDelegateDrawer : PropertyDrawer
     //Getting all the name of the methods through MethodInfo
     public static string[] GenerateMethodNameFromType(Type p_type)
     {
-        return p_type.GetMethods(BindingFlags.Instance | BindingFlags.Public)
+        MethodInfo[] methodInfos = p_type.GetMethods(BindingFlags.Instance | BindingFlags.Public)
                                         .Where(m => m.ReturnType == typeof(void)
                                                     && AreParametersSerializableByUnity(m.GetParameters()))
-                                        .ToArray()
-                                        .Select(m => m.Name).ToArray();
+                                        .ToArray();
+        int size = methodInfos.Length;
+        string[] methodNames = new string[size];
+        for (int i = 0; i < size; ++i)
+        {
+            methodNames[i] = methodInfos[i].Name;
+        }
+        return methodNames;
     }
 
     public static string GenerateComponentName(Type p_componentType, Dictionary<string, int> p_componentNameCounts)
