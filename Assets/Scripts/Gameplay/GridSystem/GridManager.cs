@@ -150,22 +150,22 @@ public class GridManager : MonoBehaviour
     private void OnDrawGizmos()
     {
         return;
-        for (int z = 0; z < _gridZSize; ++z)
-        {
-            for (int y = 0; y < _gridYSize; ++y)
-            {
-                for (int x = 0; x < _gridXSize; ++x)
-                {
-                    Vector3 Pos = new Vector3(transform.position.x + (x+0.5f) * _cellSize,
-                                                transform.position.y + ((float)y / _nbLayerPerCellSize) * _cellSize,
-                                                transform.position.z + (z + 0.5f) * _cellSize);
-                    Gizmos.DrawWireCube(Pos, new Vector3(0.66f * _cellSize, _cellSize / _nbLayerPerCellSize, 0.66f * _cellSize));
+        //for (int z = 0; z < _gridZSize; ++z)
+        //{
+        //    for (int y = 0; y < _gridYSize; ++y)
+        //    {
+        //        for (int x = 0; x < _gridXSize; ++x)
+        //        {
+        //            Vector3 Pos = new Vector3(transform.position.x + (x+0.5f) * _cellSize,
+        //                                        transform.position.y + ((float)y / _nbLayerPerCellSize) * _cellSize,
+        //                                        transform.position.z + (z + 0.5f) * _cellSize);
+        //            Gizmos.DrawWireCube(Pos, new Vector3(0.66f * _cellSize, _cellSize / _nbLayerPerCellSize, 0.66f * _cellSize));
 
-                    UnityEditor.Handles.color = Color.blue;
-                    UnityEditor.Handles.Label(Pos, $"x:{x}, y:{y}, z:{z}");
-                }
-            }
-        }        
+        //            UnityEditor.Handles.color = Color.blue;
+        //            UnityEditor.Handles.Label(Pos, $"x:{x}, y:{y}, z:{z}");
+        //        }
+        //    }
+        //}        
     }
 #endif
 }
