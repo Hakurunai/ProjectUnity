@@ -87,7 +87,6 @@ public class SerializableDelegateDrawer : PropertyDrawer
     }
 
 
-
     private void BindProperty(SerializedProperty p_property, IBindable p_uiView, string p_propertyName)
     {
         var targetProperty = p_property.FindPropertyRelative(p_propertyName);
@@ -304,33 +303,39 @@ public class SerializableDelegateDrawer : PropertyDrawer
     {
         methodSelector.RegisterValueChangedCallback(evt =>
         {
-            GameObject gameObject = (GameObject)targetSelector.value;
-            Component[] components = gameObject.GetComponents<Component>();
-
             //TODO : Horrible switch here, need to refactor this after -> currently i need this to work properly
             switch(selectionState)
             {
                 case SelectionState.TargetIsAGameObject :
+                    GameObject gameObject = (GameObject)targetSelector.value;
+                    Component[] components = gameObject.GetComponents<Component>();
+
                     // Find the selected object, evt.newValue format is Component/MethodName
                     // Component(1)/MethodName if a duplicate exist, number can increase
                     string[] splitName = evt.newValue.Split('/');
+                    Debug.Assert(splitName.Length == 2, "Selected value did not respect the format : 'Component/MethodName'");
                     string componentName = splitName[0];
                     string methodName = splitName[1];
 
+                    // Find the component based on the parsed name (accounting for duplicates with numbering)
+                    string[] allComponentNames = GenerateComponentNames(components);
 
-                    Debug.Assert(splitName.Length == 2, "Selected value did not respect the format : 'Component/MethodName'");
+                    Component targetComponent = null;
+                    for(int i = 0; i < allComponentNames.Length; ++i)
+                    {
+                        if (string.Equals(allComponentNames[i], componentName))
+                        {
+                            targetComponent = components[i];
+                            break;
+                        }   
+                    }
+                    Debug.Assert(targetComponent != null, "targetComponent is null. Issue to retrieve the component owning the method");
 
-
-                    int selectedIndex = methodSelector.choices.IndexOf(evt.newValue);
-
-                    //if (selectedIndex >= 0 && selectedIndex < components.Count())
-                    //{
-                    //    methodOwner.objectReferenceValue = components[selectedIndex];
-                    //    p_property.serializedObject.ApplyModifiedProperties();
-                    //}
+                    //Set the target component as the new method owner
+                    methodOwner.objectReferenceValue = targetComponent;
+                    p_property.serializedObject.ApplyModifiedProperties();
                     break;
-            }
-            
+            }            
         });
     }
 

@@ -183,7 +183,7 @@ MonoBehaviour:
   Event: {fileID: 11400000, guid: 3e6ab51dc76cc344f95efb2df9c0c3d9, type: 2}
   Delegate:
     _targetSelector: {fileID: 72577768}
-    _methodOwner: {fileID: 0}
+    _methodOwner: {fileID: 72577771}
     _methodName: 
   DelegateBool:
     _targetSelector: {fileID: 0}

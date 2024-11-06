@@ -8,6 +8,6 @@
         <ui:VisualElement name="MethodSelectorSection" class="section" style="flex-grow: 1;">
             <ui:DropdownField label="Method" name="MethodSelector" />
         </ui:VisualElement>
-        <ui:Foldout text="Native Inspector" name="Default_Inspector" class="section" style="justify-content: flex-start; align-self: auto;" />
+        <ui:Foldout text="Debug  : Native inspector" name="Default_Inspector" class="section" style="justify-content: flex-start; align-self: auto;" />
     </ui:VisualElement>
 </ui:UXML>
