@@ -119,53 +119,66 @@ public class SerializableDelegateDrawer : PropertyDrawer
         switch(selectionState)
         {
             case SelectionState.TargetIsAGameObject:
-                GenerateComponentsMethod();
+                GenerateComponentsMethodDropDown();
                 break;
 
             case SelectionState.TargetIsAScriptableObject:
                 ScriptableObject scriptObj = (ScriptableObject)targetSelector.value;
+                //TODO : GenerateScriptableMethodDropDown ?
                 return;
 
             default: Debug.LogError($"Selection state {selectionState} is not implemented in PopulateMethodDropDown");
                 return;
         }
-
-
     }
 
-    private void GenerateComponentsMethod()
+    private void GenerateComponentsMethodDropDown()
     {
         GameObject gameObject = (GameObject)targetSelector.value;
         Component[] components = gameObject.GetComponents<Component>();
 
-        //Get all the components of the target object
+        PopulateMethodSelectorChoices(components);
+        //TODO : Set the current value as the value of the Selector
+    }
+
+    private void PopulateMethodSelectorChoices(Component[] p_components)
+    {
         List<string> uniqueMethodsName = new List<string>();
         Dictionary<string, int> componentNameCounts = new Dictionary<string, int>();
 
-        foreach (Component component in components)
+        Type[] componentTypes = new Type[p_components.Length];
+        for (int i = 0; i < p_components.Length; ++i)
         {
-            PopulateListMethodNameFromType(component.GetType(), uniqueMethodsName, componentNameCounts);
+            componentTypes[i] = p_components[i].GetType();
         }
-        //TODO : Set the currently value as the value of the Selector
+
+        string[] componentNames = GenerateComponentNames(p_components);
+
+        for (int i = 0; i < p_components.Length; i++)
+        {
+            string[] methodNames = GenerateMethodNameFromType(componentTypes[i]);
+            foreach (string method in methodNames)
+            {
+                uniqueMethodsName.Add($"{componentNames[i]}/{method}");
+            }
+        }
         methodSelector.choices = uniqueMethodsName;
-
-        //// Find the currently selected component index
-        //Component selectedComponent = methodOwner.objectReferenceValue as Component;
-        //int selectedIndex = selectedComponent != null ? Array.IndexOf(components, selectedComponent) : 0;
-        //methodSelector.value = methodSelector.choices[selectedIndex];
     }
 
-    private static void PopulateListMethodNameFromType(Type p_componentType, List<string> p_methodNames,
-                                                       Dictionary<string, int> p_componentNameCounts)
+    //Arg : all components from the SAME GameObject
+    private string[] GenerateComponentNames(Component[] p_components)
     {
-        string componentName = GenerateComponentName(p_componentType, p_componentNameCounts);
-        string[] methodsName = GenerateMethodNameFromType(p_componentType);
+        int size = p_components.Length;
+        string[] componentNames = new string[size];
+        Dictionary<string, int> componentNameCounts = new Dictionary<string, int>();
 
-        foreach (string method in methodsName)
+        for (int i = 0; i < size; ++i)
         {
-            p_methodNames.Add($"{componentName}/{method}");
+            componentNames[i] = GenerateComponentName(p_components[i].GetType().Name, componentNameCounts);
         }
+        return componentNames;
     }
+
 
     //Getting all the name of the methods through MethodInfo
     public static string[] GenerateMethodNameFromType(Type p_type)
@@ -183,9 +196,9 @@ public class SerializableDelegateDrawer : PropertyDrawer
         return methodNames;
     }
 
-    public static string GenerateComponentName(Type p_componentType, Dictionary<string, int> p_componentNameCounts)
+    public static string GenerateComponentName(in string p_componentDefaultName, Dictionary<string, int> p_componentNameCounts)
     {
-        string componentName = p_componentType.Name;
+        string componentName = p_componentDefaultName;
 
         //we will treat duplicate by adding a number to each of them
         if (!p_componentNameCounts.ContainsKey(componentName))
@@ -202,9 +215,10 @@ public class SerializableDelegateDrawer : PropertyDrawer
 
     private static bool AreParametersSerializableByUnity(ParameterInfo[] parameters)
     {
+        Type paramType = null;
         foreach (var param in parameters)
         {
-            Type paramType = param.ParameterType;
+            paramType = param.ParameterType;
             if (!IsSerializableByUnity(paramType))
             {
                 return false;
@@ -279,32 +293,6 @@ public class SerializableDelegateDrawer : PropertyDrawer
         }
     }
 
-    //private void PopulateDropdown(Type type, SerializedProperty methodNameProperty)
-    //{
-    //    // Get all valid methods (void return type, no parameters)
-    //    MethodInfo[] methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-    //                               .Where(m => m.GetParameters().Length == 0 && m.ReturnType == typeof(void))
-    //                               .ToArray();
-
-    //    string[] methodNames = methods.Select(m => m.Name).ToArray();
-
-    //    // Find the currently selected method
-    //    string currentMethodName = methodNameProperty.stringValue;
-    //    int selectedIndex = Array.IndexOf(methodNames, currentMethodName);
-    //    if (selectedIndex == -1) selectedIndex = 0; // Default to the first method if not found
-
-    //    // Draw the method dropdown
-    //    Rect methodRect = new Rect(position.x, position.y + yOffset, position.width, EditorGUIUtility.singleLineHeight);
-    //    selectedIndex = EditorGUI.Popup(methodRect, "Method", selectedIndex, methodNames);
-
-    //    // Update the methodName property with the selected method
-    //    if (selectedIndex >= 0 && selectedIndex < methodNames.Length)
-    //    {
-    //        methodNameProperty.stringValue = methodNames[selectedIndex];
-    //    }
-    //}
-
-
     #region Callbacks
     private void RegisterCallback(SerializedProperty p_property)
     {
@@ -314,20 +302,36 @@ public class SerializableDelegateDrawer : PropertyDrawer
 
     private void MethodSelectorValueChangedCallback(SerializedProperty p_property)
     {
-        //methodSelector.RegisterValueChangedCallback(evt =>
-        //{
-        //    GameObject gameObject = (GameObject)targetSelector.value;
-        //    Component[] components = gameObject.GetComponents<Component>();
+        methodSelector.RegisterValueChangedCallback(evt =>
+        {
+            GameObject gameObject = (GameObject)targetSelector.value;
+            Component[] components = gameObject.GetComponents<Component>();
 
-        //    // Find the selected object and assign it to the target property
-        //    int selectedIndex = 0;// methodSelector.choices.IndexOf(evt.newValue);
+            //TODO : Horrible switch here, need to refactor this after -> currently i need this to work properly
+            switch(selectionState)
+            {
+                case SelectionState.TargetIsAGameObject :
+                    // Find the selected object, evt.newValue format is Component/MethodName
+                    // Component(1)/MethodName if a duplicate exist, number can increase
+                    string[] splitName = evt.newValue.Split('/');
+                    string componentName = splitName[0];
+                    string methodName = splitName[1];
 
-        //    if (selectedIndex >= 0 && selectedIndex < components.Count())
-        //    {
-        //        methodOwner.objectReferenceValue = components[selectedIndex];
-        //        p_property.serializedObject.ApplyModifiedProperties();
-        //    }
-        //});        
+
+                    Debug.Assert(splitName.Length == 2, "Selected value did not respect the format : 'Component/MethodName'");
+
+
+                    int selectedIndex = methodSelector.choices.IndexOf(evt.newValue);
+
+                    //if (selectedIndex >= 0 && selectedIndex < components.Count())
+                    //{
+                    //    methodOwner.objectReferenceValue = components[selectedIndex];
+                    //    p_property.serializedObject.ApplyModifiedProperties();
+                    //}
+                    break;
+            }
+            
+        });
     }
 
     private void TargetSelectorValueChangedCallback(ChangeEvent<UnityEngine.Object> evt)
@@ -406,30 +410,5 @@ public class SerializableDelegateDrawer : PropertyDrawer
         }
         else
             selectionState = SelectionState.UnusableType;
-    }
-    
-    private void DrawMethodDropdown(Rect position, float yOffset, Type type, SerializedProperty methodNameProperty)
-    {
-        // Get all valid methods (void return type, no parameters)
-        MethodInfo[] methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                                   .Where(m => m.GetParameters().Length == 0 && m.ReturnType == typeof(void))
-                                   .ToArray();
-
-        string[] methodNames = methods.Select(m => m.Name).ToArray();
-
-        // Find the currently selected method
-        string currentMethodName = methodNameProperty.stringValue;
-        int selectedIndex = Array.IndexOf(methodNames, currentMethodName);
-        if (selectedIndex == -1) selectedIndex = 0; // Default to the first method if not found
-
-        // Draw the method dropdown
-        Rect methodRect = new Rect(position.x, position.y + yOffset, position.width, EditorGUIUtility.singleLineHeight);
-        selectedIndex = EditorGUI.Popup(methodRect, "Method", selectedIndex, methodNames);
-
-        // Update the methodName property with the selected method
-        if (selectedIndex >= 0 && selectedIndex < methodNames.Length)
-        {
-            methodNameProperty.stringValue = methodNames[selectedIndex];
-        }
     }
 }
