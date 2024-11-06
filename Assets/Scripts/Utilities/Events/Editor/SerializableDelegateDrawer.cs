@@ -8,7 +8,7 @@ using UnityEditor.UIElements;
 using System.Collections.Generic;
 using System.Collections;
 
-[CustomPropertyDrawer(typeof(SerializableDelegateNoParam), true)] // 'true' applies to derived classes
+[CustomPropertyDrawer(typeof(SerializableDelegateNoParam), true)]
 public class SerializableDelegateDrawer : PropertyDrawer
 {
     enum SelectionState
@@ -33,7 +33,8 @@ public class SerializableDelegateDrawer : PropertyDrawer
 
     SelectionState selectionState = SelectionState.None;
 
-    SerializedProperty methodOwner;
+    SerializedProperty methodOwnerProperty;
+    SerializedProperty methodNameProperty;
 
 
     public SerializableDelegateDrawer()
@@ -58,7 +59,8 @@ public class SerializableDelegateDrawer : PropertyDrawer
 
     private void GetSerialiezedProperty(SerializedProperty p_property)
     {
-        methodOwner = p_property.FindPropertyRelative("_methodOwner");
+        methodOwnerProperty = p_property.FindPropertyRelative("_methodOwner");
+        methodNameProperty = p_property.FindPropertyRelative("_methodName");
     }
 
     private void DrawDefaultInspector(SerializedProperty p_property)
@@ -100,16 +102,30 @@ public class SerializableDelegateDrawer : PropertyDrawer
     {
         delegateNameLabel.text = p_property.displayName;
 
-        //The bindings seems to no be totally correct at that point, so we can get the data through the SerializedProperty to avoid a null ref
         var targetSelec = p_property.FindPropertyRelative("_targetSelector");
         lastTargetValidValue = targetSelec.objectReferenceValue;
-        if (targetSelec.objectReferenceValue == null)
-            selectionState = SelectionState.None;
-        else
-            selectionState = targetSelec.objectReferenceValue is GameObject ? SelectionState.TargetIsAGameObject :
-                             targetSelec.objectReferenceValue is ScriptableObject ? SelectionState.TargetIsAScriptableObject : SelectionState.UnusableType;
+        SetSelectionStateStatus(targetSelec.objectReferenceValue);
 
-        ShowCompoAndMethodSelectors();
+        //TODO : recupérer la méthode et son propriétaire de l'objet pour les set sur le drawer
+         
+        UpdateMethodSelectorVisibility();
+    }
+
+    private void SetSelectionStateStatus(UnityEngine.Object p_object)
+    {
+        if (p_object == null)
+        {
+            selectionState = SelectionState.None;
+            return;
+        }
+        selectionState = p_object is GameObject ? SelectionState.TargetIsAGameObject :
+                         p_object is ScriptableObject ? SelectionState.TargetIsAScriptableObject : SelectionState.UnusableType;
+#if false
+        string[] selectionStateName = new string[]
+            { "None", "TargetIsAScriptableObject", "TargetIsAGameObject", "UnusableType" };
+        Debug.Log($"New selection state : {selectionStateName[(int)selectionState]}");
+#endif
+
     }
 
     private void PopulateMethodDropDown()
@@ -268,21 +284,19 @@ public class SerializableDelegateDrawer : PropertyDrawer
         return false;
     }
 
-    private void ShowCompoAndMethodSelectors()
+    private void UpdateMethodSelectorVisibility()
     {
         switch(selectionState)
         {
-            case SelectionState.None:
-                HideVisualElement(new VisualElement[] { methodSelector });
-                break;
-
             case SelectionState.TargetIsAGameObject:
                 goto case SelectionState.TargetIsAScriptableObject; //fall through
-
             case SelectionState.TargetIsAScriptableObject:
                 ShowVisualElement(new VisualElement[] { methodSelector });
                 break;
 
+
+            case SelectionState.None:
+                goto case SelectionState.UnusableType; //fall through
             case SelectionState.UnusableType:
                 HideVisualElement(new VisualElement[] { methodSelector });
                 break;
@@ -295,7 +309,7 @@ public class SerializableDelegateDrawer : PropertyDrawer
     #region Callbacks
     private void RegisterCallback(SerializedProperty p_property)
     {
-        targetSelector.RegisterValueChangedCallback(TargetSelectorValueChangedCallback);
+        TargetSelectorValueChangedCallback(p_property);
         MethodSelectorValueChangedCallback(p_property);        
     }
 
@@ -303,57 +317,98 @@ public class SerializableDelegateDrawer : PropertyDrawer
     {
         methodSelector.RegisterValueChangedCallback(evt =>
         {
-            //TODO : Horrible switch here, need to refactor this after -> currently i need this to work properly
-            switch(selectionState)
-            {
-                case SelectionState.TargetIsAGameObject :
-                    GameObject gameObject = (GameObject)targetSelector.value;
-                    Component[] components = gameObject.GetComponents<Component>();
-
-                    // Find the selected object, evt.newValue format is Component/MethodName
-                    // Component(1)/MethodName if a duplicate exist, number can increase
-                    string[] splitName = evt.newValue.Split('/');
-                    Debug.Assert(splitName.Length == 2, "Selected value did not respect the format : 'Component/MethodName'");
-                    string componentName = splitName[0];
-                    string methodName = splitName[1];
-
-                    // Find the component based on the parsed name (accounting for duplicates with numbering)
-                    string[] allComponentNames = GenerateComponentNames(components);
-
-                    Component targetComponent = null;
-                    for(int i = 0; i < allComponentNames.Length; ++i)
-                    {
-                        if (string.Equals(allComponentNames[i], componentName))
-                        {
-                            targetComponent = components[i];
-                            break;
-                        }   
-                    }
-                    Debug.Assert(targetComponent != null, "targetComponent is null. Issue to retrieve the component owning the method");
-
-                    //Set the target component as the new method owner
-                    methodOwner.objectReferenceValue = targetComponent;
-                    p_property.serializedObject.ApplyModifiedProperties();
-                    break;
-            }            
+            UpdateMethodSelector();
+            p_property.serializedObject.ApplyModifiedProperties();
         });
     }
 
-    private void TargetSelectorValueChangedCallback(ChangeEvent<UnityEngine.Object> evt)
+    private void TargetSelectorValueChangedCallback(SerializedProperty p_property)
     {
-        // Ensure HelpBox is created only once
-        if (targetSelectorHelp == null)
+        targetSelector.RegisterValueChangedCallback(evt =>
         {
-            targetSelectorHelp = new HelpBox("A target must be set.", HelpBoxMessageType.Warning);
-            targetSection.Add(targetSelectorHelp);
+            // Ensure HelpBox is created only once
+            if (targetSelectorHelp == null)
+            {
+                targetSelectorHelp = new HelpBox("A target must be set.", HelpBoxMessageType.Warning);
+                targetSection.Add(targetSelectorHelp);
+            }
+
+            SetSelectionStateStatus(evt.newValue);
+            UpdateTargetSelector(evt);
+            UpdateMethodSelector();
+
+            p_property.serializedObject.ApplyModifiedProperties();
+        });        
+    }
+
+    private void UpdateMethodSelector()
+    {
+        if (methodSelector.value == null)
+        {
+            ResetMethodSelectorToNull();
+            return;
         }
-
-        IsTargetTypeValide(evt.newValue);
-
+        else if (string.Equals(methodSelector.value, "None"))
+            return;
+        
         switch(selectionState)
+        {          
+            case SelectionState.TargetIsAGameObject:
+                GameObject gameObject = (GameObject)targetSelector.value;
+                Component[] components = gameObject.GetComponents<Component>();
+
+                // Find the selected object, evt.newValue format is Component/MethodName
+                // Component(1)/MethodName if a duplicate exist, number can increase
+                string[] splitName = methodSelector.value.Split('/');
+                Debug.Assert(splitName.Length == 2, "Selected value did not respect the format : 'Component/MethodName'");
+                string componentName = splitName[0];
+                string methodName = splitName[1];
+
+                // Find the component based on the parsed name (accounting for duplicates with numbering)
+                string[] allComponentNames = GenerateComponentNames(components);
+
+                Component targetComponent = null;
+                for (int i = 0; i < allComponentNames.Length; ++i)
+                {
+                    if (string.Equals(allComponentNames[i], componentName))
+                    {
+                        targetComponent = components[i];
+                        break;
+                    }
+                }
+                Debug.Assert(targetComponent != null, "targetComponent is null. Issue to retrieve the component owning the method");
+
+                //Set the target component as the new method owner and set the method name to use at runtime
+                methodOwnerProperty.objectReferenceValue = targetComponent;
+                methodNameProperty.stringValue = methodName;
+                break;
+
+            case SelectionState.TargetIsAScriptableObject:
+                break;
+
+            case SelectionState.None:
+                ResetMethodSelectorToNull();
+                break;
+
+            case SelectionState.UnusableType:
+                break;
+        }
+    }
+
+    private void ResetMethodSelectorToNull()
+    {
+        methodOwnerProperty.objectReferenceValue = null;
+        methodNameProperty.stringValue = string.Empty;
+        methodSelector.choices = new List<string>() { "None" };
+        methodSelector.value = methodSelector.choices[0];
+    }
+
+    private void UpdateTargetSelector(ChangeEvent<UnityEngine.Object> evt)
+    {
+        switch (selectionState)
         {
             //We can group this two states together
-            case SelectionState.TargetIsAGameObject : 
+            case SelectionState.TargetIsAGameObject:
                 goto case SelectionState.TargetIsAScriptableObject; //fall through
 
             case SelectionState.TargetIsAScriptableObject:
@@ -365,17 +420,18 @@ public class SerializableDelegateDrawer : PropertyDrawer
 
             case SelectionState.None:
                 ShowVisualElement(new VisualElement[] { targetSelectorHelp });
-                lastTargetValidValue = null;                
+                lastTargetValidValue = null;
                 break;
 
             case SelectionState.UnusableType:
                 Debug.LogWarning($"{evt.newValue.GetType()} is an invalid type! Please assign a GameObject from the scene or a ScriptableObject. " +
                 $"Reverting to the last previous valid value.");
+
+                SetSelectionStateStatus(lastTargetValidValue);
                 targetSelector.value = lastTargetValidValue;
                 break;
         }
-
-        ShowCompoAndMethodSelectors();
+        UpdateMethodSelectorVisibility();
     }
     #endregion Callbacks
 
@@ -395,25 +451,5 @@ public class SerializableDelegateDrawer : PropertyDrawer
             element.visible = true;
             element.style.display = DisplayStyle.Flex;
         }
-    }
-
-    private void IsTargetTypeValide(UnityEngine.Object p_NewValue)
-    {
-        if (p_NewValue == null)
-        {
-            selectionState = SelectionState.None;
-            return;
-        }
-
-        if (p_NewValue is GameObject)
-        {
-            selectionState = SelectionState.TargetIsAGameObject;
-        }
-        else if (p_NewValue is ScriptableObject)
-        {
-            selectionState = SelectionState.TargetIsAScriptableObject;
-        }
-        else
-            selectionState = SelectionState.UnusableType;
     }
 }
